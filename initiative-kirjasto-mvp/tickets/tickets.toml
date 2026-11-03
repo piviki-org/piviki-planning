@@ -3,7 +3,7 @@ id = 1
 slug = "epic-librarian-catalogue"
 title = "Librarians keep the catalogue"
 description = "On the deployed platform, a librarian adds and edits books and donated copies in an English tool built for translation, with every record owned by the Piviki tenant and its policy values in place."
-covers = ["R11", "R17", "R20", "R22", "R25"]
+covers = ["R11", "R13", "R17", "R20", "R22", "R25"]
 
 [[epic]]
 id = 2
@@ -11,7 +11,7 @@ slug = "epic-initial-load"
 title = "The initial collection is imported"
 description = "The initial collection of about 300 books is in the live catalogue, created from scans by a script and reviewed by a librarian before bulk import; production then moves to OVH and the AWS instance becomes the test environment."
 covers = ["R13"]
-after = [{ epic = 1, needs = "the catalogue record format and the librarian tool to review in" }]
+after = [{ epic = 1, needs = "the record format and review view, the import API key and Access service token (1.6), the tested restore (1.7) and the hardening (1.8)" }]
 
 [[epic]]
 id = 3

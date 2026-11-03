@@ -2,7 +2,7 @@
 type: epic
 title: "Librarians keep the catalogue"
 parent: initiative-kirjasto-mvp
-covers: [R11, R17, R20, R22, R25]
+covers: [R11, R13, R17, R20, R22, R25]
 sources: []
 companions: [_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md]
 after: []
@@ -79,4 +79,8 @@ For librarians, a working tool replaces memory for what the library owns, and ev
 - Decision: 2026-11-03: No closing end-to-end suite in this epic, because every story tests itself and is checked in production; a Playwright suite on a local Compose stack is proposed when epic-reservation-loop is planned.
 - Decision: 2026-11-03: Donor linking moves to epic-patron-site, because no real donor with consent exists before its sign-up and consent box; this epic still creates `donations` with its optional donor field (spine AD-19).
 - Decision: 2026-11-03: Production runs on AWS EC2 on the founders' credits until right after the initial load, then moves to OVH VPS-1 by backup restore; the AWS instance then becomes the test environment (spine AD-17). No real patron's data is ever on AWS (AD-8, AD-18).
+- Decision: 2026-11-03: Story 1 stays whole as the tracer bullet, though larger than one session; the build plans it in steps.
+- Decision: 2026-11-03: Story 8 stays whole; runtime hardening and logging and patching land together before the initial load.
+- Decision: 2026-11-03: After story 6 the work runs in two lanes: infrastructure (7, 8, 9) and the app (10, 11, 12, 13); the refactor sweep waits on both, and epic-initial-load needs only 6, 7 and 8. Who builds the second lane is open.
+- Decision: 2026-11-03: Stories 10 to 13 are checked on the AWS pre-launch environment; the move story deletes their check records before the final dump.
 - Assumption: The seeded placeholder policy values are not used for any real loan before stakeholders set them.

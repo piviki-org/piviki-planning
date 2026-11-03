@@ -54,7 +54,7 @@ The milestones are internal targets. The library opens when the software is read
 | Patron website live at piviki.fi | Mid-December 2026 |
 | First real loan | End of December 2026 |
 
-The work is split into six epics, built in this order. Every epic deploys to production at a non-public address (`beta.piviki.fi`), and sign-up stays closed to real patrons until the launch epic. Production runs on AWS EC2 until right after the initial load, then moves to an OVHcloud VPS, and the AWS instance becomes a test environment.
+The work is split into six epics, built in this order. Every epic deploys to production at a non-public address (`beta.piviki.fi`), and sign-up stays closed to real patrons until the launch epic. Until right after the initial load, everything runs on a pre-launch AWS EC2 instance that also holds the real catalogue; the move then carries it to an OVHcloud VPS, and the AWS instance becomes a test environment.
 
 | # | Epic | Delivers | Needs | Risk |
 |---|---|---|---|---|

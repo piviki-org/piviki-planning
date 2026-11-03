@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piviki Architecture Explained</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;1,400&family=Literata:opsz,wght@7..72,500;7..72,650&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a single reading column like a library's handbook, with wide figures and tables
+   set in panels. Vermilion marks only the one thing each section turns on. */
+:root {
+  --paper: #f2f6f4;
+  --panel: #ffffff;
+  --ink: #14302c;
+  --muted: #4f635d;
+  --line: #c6d3ce;
+  --accent: #ae2f1a;
+  --accent-soft: #f9e6e1;
+  --display: "Literata", Georgia, serif;
+  --body: "Be Vietnam Pro", "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #101b19; --panel: #182724; --ink: #e6eeea; --muted: #a2b5ae;
+    --line: #33473f; --accent: #f28169; --accent-soft: #3a211b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #101b19; --panel: #182724; --ink: #e6eeea; --muted: #a2b5ae;
+  --line: #33473f; --accent: #f28169; --accent-soft: #3a211b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 16.5px/1.6 var(--body); }
+main { max-width: 900px; margin: 0 auto; padding: 48px 20px 72px; display: grid; gap: 52px; }
+header { display: grid; gap: 14px; }
+.kicker { font-size: 13.5px; font-weight: 600; color: var(--accent); margin: 0; }
+h1, h2 { font-family: var(--display); font-weight: 650; line-height: 1.18; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(32px, 6vw, 46px); }
+h2 { font-size: 26px; }
+h3 { font-size: 16.5px; font-weight: 600; margin: 0; }
+p { margin: 0; max-width: 66ch; }
+.lede { font-size: 19px; line-height: 1.5; }
+section { display: grid; gap: 16px; }
+.status { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; max-width: none; }
+.muted { color: var(--muted); }
+code, .ad { font-family: var(--mono); font-size: .88em; }
+.ad { color: var(--muted); white-space: nowrap; }
+figure { margin: 0; background: var(--panel); border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; }
+.scroll { overflow-x: auto; }
+figure svg { display: block; width: 100%; min-width: 720px; height: auto; color: var(--ink); }
+figcaption { font-size: 14.5px; color: var(--muted); max-width: 72ch; }
+svg text { font-family: var(--body); font-size: 12.5px; fill: currentColor; }
+svg .t { font-weight: 600; font-size: 13.5px; }
+svg .s { font-size: 11.5px; fill: var(--muted); }
+svg .zone { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 5 4; }
+svg .zl { font-weight: 600; font-size: 12.5px; fill: var(--muted); }
+svg .box { fill: var(--paper); stroke: currentColor; stroke-width: 1.2; }
+svg .hi { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+svg .dash { stroke-dasharray: 5 4; }
+svg .ln { fill: none; stroke: currentColor; stroke-width: 1.3; }
+.wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.45; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font-weight: 600; font-size: 13.5px; color: var(--muted); }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.pick td { background: var(--accent-soft); }
+.c1 { min-width: 170px; font-weight: 500; }
+ul { margin: 0; padding-left: 20px; display: grid; gap: 8px; max-width: 70ch; }
+.state { font-family: var(--mono); font-size: .9em; white-space: nowrap; }
+.first { color: var(--accent); font-weight: 600; white-space: nowrap; }
+footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+@media (max-width: 480px) { main { padding-top: 32px; gap: 40px; } .lede { font-size: 17.5px; } }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <p class="kicker">Piviki, the Vietnamese community lending library in Tampere</p>
+  <h1>How the Piviki system will work</h1>
+  <p class="lede">One small server holds every book, account and rule. A free static website, the librarian tool and the scanning script all talk to it, and the running bill stays near 5 EUR a month plus email.</p>
+  <p class="status"><strong>Status, 2 November 2026:</strong> the design is finished and nothing is built yet. Five independent reviews found real problems. Those fixes are in the design, but the reviews have not been re-run on the revised version. Some technical assumptions are <a href="#unproven">still to be proven</a>, and <a href="#decisions">five questions need the founders</a>.</p>
+</header>
+
+<section>
+  <h2>The system in one picture</h2>
+  <p>Only <code>piviki-core</code> holds data or applies library rules. That is the idea everything else follows: the patron site and the scanning script can ask core to do something, but they can never decide whether it is allowed.</p>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 900 470" role="img" aria-label="Parents, librarians and the scanning script reach one server through Cloudflare. Only core on that server holds rules and talks to the database.">
+      <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <rect class="zone" x="240" y="26" width="270" height="426"/>
+      <text class="zl" x="256" y="48">Cloudflare, free plan</text>
+      <rect class="zone" x="590" y="26" width="290" height="426"/>
+      <text class="zl" x="606" y="48">OVHcloud server, EU</text>
+
+      <rect class="box" x="20" y="60" width="170" height="52"/>
+      <text class="t" x="105" y="83" text-anchor="middle">Parent's browser</text><text class="s" x="105" y="100" text-anchor="middle">Vietnamese or English</text>
+      <rect class="box" x="20" y="210" width="170" height="52"/>
+      <text class="t" x="105" y="233" text-anchor="middle">Librarian's browser</text><text class="s" x="105" y="250" text-anchor="middle">English</text>
+      <rect class="box" x="20" y="300" width="170" height="52"/>
+      <text class="t" x="105" y="323" text-anchor="middle">Scanning script</text><text class="s" x="105" y="340" text-anchor="middle">a founder's machine</text>
+
+      <rect class="box" x="260" y="60" width="230" height="52"/>
+      <text class="t" x="375" y="83" text-anchor="middle">Patron site and Worker</text><text class="s" x="375" y="100" text-anchor="middle">piviki.fi, static pages</text>
+      <rect class="box" x="260" y="135" width="230" height="52"/>
+      <text class="t" x="375" y="158" text-anchor="middle">Public API door</text><text class="s" x="375" y="175" text-anchor="middle">api.piviki.fi, /api/v1 only</text>
+      <rect class="box" x="260" y="210" width="230" height="52"/>
+      <text class="t" x="375" y="233" text-anchor="middle">Access check</text><text class="s" x="375" y="250" text-anchor="middle">admin.piviki.fi, staff only</text>
+      <rect class="box" x="260" y="300" width="230" height="52"/>
+      <text class="t" x="375" y="323" text-anchor="middle">Public image bucket</text><text class="s" x="375" y="340" text-anchor="middle">book covers only</text>
+      <rect class="box" x="260" y="375" width="230" height="52"/>
+      <text class="t" x="375" y="398" text-anchor="middle">Private bucket, EU</text><text class="s" x="375" y="415" text-anchor="middle">encrypted backups</text>
+
+      <rect class="box" x="610" y="60" width="250" height="52"/>
+      <text class="t" x="735" y="83" text-anchor="middle">Tunnel and router</text><text class="s" x="735" y="100" text-anchor="middle">no web ports open to the internet</text>
+      <rect class="hi" x="610" y="150" width="250" height="90"/>
+      <text class="t" x="735" y="182" text-anchor="middle">piviki-core</text><text class="s" x="735" y="201" text-anchor="middle">all rules, all accounts</text><text class="s" x="735" y="218" text-anchor="middle">librarian tool and API</text>
+      <rect class="box" x="610" y="285" width="250" height="52"/>
+      <text class="t" x="735" y="316" text-anchor="middle">Postgres database</text>
+      <rect class="box" x="610" y="375" width="250" height="52"/>
+      <text class="t" x="735" y="406" text-anchor="middle">Backup job</text>
+
+      <line class="ln" x1="190" y1="86" x2="258" y2="86" marker-end="url(#a1)"/><text class="s" x="224" y="79" text-anchor="middle">pages</text>
+      <line class="ln" x1="190" y1="104" x2="258" y2="150" marker-end="url(#a1)"/><text class="s" x="212" y="141" text-anchor="middle">data</text>
+      <line class="ln" x1="190" y1="236" x2="258" y2="236" marker-end="url(#a1)"/><text class="s" x="224" y="229" text-anchor="middle">sign in</text>
+      <line class="ln" x1="190" y1="316" x2="258" y2="254" marker-end="url(#a1)"/><text class="s" x="207" y="280" text-anchor="middle">drafts</text>
+      <line class="ln" x1="375" y1="112" x2="375" y2="133" marker-end="url(#a1)"/>
+      <line class="ln" x1="375" y1="210" x2="375" y2="189" marker-end="url(#a1)"/>
+      <line class="ln" x1="490" y1="161" x2="608" y2="88" marker-end="url(#a1)"/><text class="s" x="550" y="112" text-anchor="middle">tunnel</text>
+      <line class="ln" x1="735" y1="112" x2="735" y2="148" marker-end="url(#a1)"/>
+      <line class="ln" x1="735" y1="240" x2="735" y2="283" marker-end="url(#a1)"/><text class="s" x="745" y="266">reads, writes</text>
+      <line class="ln" x1="735" y1="375" x2="735" y2="339" marker-end="url(#a1)"/><text class="s" x="745" y="361">read only</text>
+      <line class="ln" x1="610" y1="228" x2="492" y2="322" marker-end="url(#a1)"/><text class="s" x="538" y="262" text-anchor="middle">uploads</text>
+      <line class="ln" x1="610" y1="401" x2="492" y2="401" marker-end="url(#a1)"/><text class="s" x="550" y="394" text-anchor="middle">nightly</text>
+    </svg>
+    </div>
+    <figcaption>Not drawn: parents' browsers load book covers directly from the image bucket, core sends all library email through one email provider, and parents can optionally sign in with Google.</figcaption>
+  </figure>
+  <div class="wrap"><table>
+    <tr><th>Project</th><th>What it is</th><th>Who uses it</th></tr>
+    <tr><td class="c1"><code>piviki-core</code></td><td>The library itself: data, rules, emails, the librarian tool, built with Payload and Next.js</td><td>Librarians directly; everyone else through its API</td></tr>
+    <tr><td class="c1"><code>piviki-patron</code></td><td>The public website: browse, search, reserve, see your loans. Screens only, no rules</td><td>Parents</td></tr>
+    <tr><td class="c1"><code>piviki-scan</code></td><td>Turns photos of the donated books into draft catalogue records for a librarian to review</td><td>Founders, for the initial load</td></tr>
+    <tr><td class="c1"><code>piviki-infra</code></td><td>Server setup, Cloudflare configuration, recovery and breach runbooks</td><td>Founders</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Following one reservation</h2>
+  <p>A reservation moves through six possible states, and a queue place is simply a reservation in the <span class="state">queued</span> state. Keeping one record for both means the queue and the shelf can never disagree about who is next. <span class="ad">AD-2, AD-3</span></p>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 900 290" role="img" aria-label="A reservation starts as queued or reserved, becomes ready when a librarian marks it, and picked up at hand-over, which starts a loan. It can be cancelled by the patron, or expired only by a librarian.">
+      <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <rect class="hi" x="100" y="12" width="150" height="30"/><text class="t" x="175" y="32" text-anchor="middle">Parent reserves</text>
+      <line class="ln" x1="140" y1="42" x2="88" y2="108" marker-end="url(#a2)"/><text class="s" x="100" y="72" text-anchor="end">none free</text>
+      <line class="ln" x1="210" y1="42" x2="262" y2="108" marker-end="url(#a2)"/><text class="s" x="250" y="72">one free</text>
+
+      <rect class="box" x="20" y="110" width="130" height="50"/><text class="t" x="85" y="140" text-anchor="middle">queued</text>
+      <rect class="box" x="200" y="110" width="130" height="50"/><text class="t" x="265" y="140" text-anchor="middle">reserved</text>
+      <rect class="box" x="380" y="110" width="130" height="50"/><text class="t" x="445" y="140" text-anchor="middle">ready</text>
+      <rect class="box" x="560" y="110" width="130" height="50"/><text class="t" x="625" y="140" text-anchor="middle">picked up</text>
+      <rect class="box dash" x="740" y="110" width="140" height="50"/><text class="t" x="810" y="132" text-anchor="middle">loan</text><text class="s" x="810" y="149" text-anchor="middle">a separate record</text>
+
+      <line class="ln" x1="150" y1="135" x2="198" y2="135" marker-end="url(#a2)"/><text class="s" x="175" y="100" text-anchor="middle">copy comes back</text>
+      <line class="ln" x1="330" y1="135" x2="378" y2="135" marker-end="url(#a2)"/><text class="s" x="355" y="100" text-anchor="middle">librarian marks</text>
+      <line class="ln" x1="510" y1="135" x2="558" y2="135" marker-end="url(#a2)"/><text class="s" x="535" y="100" text-anchor="middle">handed over</text>
+      <line class="ln" x1="690" y1="135" x2="738" y2="135" marker-end="url(#a2)"/><text class="s" x="715" y="100" text-anchor="middle">starts</text>
+
+      <rect class="box" x="110" y="220" width="130" height="50"/><text class="t" x="175" y="250" text-anchor="middle">cancelled</text>
+      <rect class="box" x="380" y="220" width="130" height="50"/><text class="t" x="445" y="250" text-anchor="middle">expired</text>
+      <rect class="box" x="745" y="220" width="130" height="50"/><text class="t" x="810" y="250" text-anchor="middle">returned or lost</text>
+
+      <line class="ln" x1="85" y1="160" x2="148" y2="218" marker-end="url(#a2)"/>
+      <line class="ln" x1="265" y1="160" x2="200" y2="218" marker-end="url(#a2)"/>
+      <line class="ln" x1="400" y1="160" x2="242" y2="238" marker-end="url(#a2)"/>
+      <text class="s" x="175" y="195" text-anchor="middle">parent cancels</text>
+      <line class="ln" x1="445" y1="160" x2="445" y2="218" marker-end="url(#a2)"/><text class="s" x="455" y="195">librarian only, flagged after 7 days</text>
+      <line class="ln" x1="810" y1="160" x2="810" y2="218" marker-end="url(#a2)"/>
+    </svg>
+    </div>
+    <figcaption>When a copy comes free, or a reservation is cancelled or expired, the oldest queued reservation moves up. Nothing expires by itself. A renewal updates the same loan, and is refused while anyone is queued for the title.</figcaption>
+  </figure>
+  <p>What a parent sees for a book comes from one calculation: copies on the shelf, minus reservations waiting for one. A book with spare copies shows as available, and otherwise as on loan. It shows as unavailable only when every copy is lost.</p>
+  <div class="wrap"><table>
+    <tr><th>Example title</th><th class="n">Copies on shelf</th><th class="n">Queued or reserved</th><th class="n">Free</th><th>Parent sees</th></tr>
+    <tr><td>Two copies, one reservation</td><td class="n">2</td><td class="n">1</td><td class="n">1</td><td class="state">available</td></tr>
+    <tr><td>Two on shelf, two reservations, one on loan</td><td class="n">2</td><td class="n">2</td><td class="n">0</td><td class="state">on_loan</td></tr>
+    <tr><td>Only copy on loan, one in queue</td><td class="n">0</td><td class="n">1</td><td class="n">&minus;1</td><td class="state">on_loan</td></tr>
+    <tr><td>Only copy lost</td><td class="n">0</td><td class="n">0</td><td class="n">0</td><td class="state">unavailable</td></tr>
+  </table></div>
+  <p>An overdue book blocks reserving, queueing and renewing until it is returned. That is the only consequence of being late, and the database has no field for fees or fines. <span class="ad">AD-2, AD-4</span></p>
+</section>
+
+<section>
+  <h2>What it costs each month</h2>
+  <div class="wrap"><table>
+    <tr><th>Item</th><th>Covers</th><th class="n">EUR a month</th></tr>
+    <tr class="pick"><td class="c1">OVHcloud VPS-1</td><td>2 vCPU, 4 GB, 40 GB. Month to month, no commitment</td><td class="n">4.49 excl. VAT</td></tr>
+    <tr><td class="c1">Cloudflare</td><td>Patron site, Worker, Tunnel, Access, image and backup storage, while within the free limits: 100,000 Worker requests a day, 10 GB of storage</td><td class="n">0</td></tr>
+    <tr><td class="c1">GitHub</td><td>Code, builds and images, on the assumption that the repositories stay public</td><td class="n">0</td></tr>
+    <tr><td class="c1">Email provider</td><td>Not chosen yet. Must be a transactional service with a data processing agreement</td><td class="n">To be priced</td></tr>
+  </table></div>
+  <p>The target is about 15 EUR a month, which leaves about 10 EUR before VAT for email and any overage. The <code>piviki.fi</code> domain renewal is not counted here. Cloudflare Access may ask for a card on file even on its free plan.</p>
+</section>
+
+<section>
+  <h2>Choices we weighed</h2>
+  <p>Prices are as checked on 2 November 2026.</p>
+  <div class="wrap"><table>
+    <tr><th>Question</th><th>Chosen</th><th>Considered</th><th>What we accept</th></tr>
+    <tr><td class="c1">Where core runs</td><td>OVHcloud VPS, 4.49 EUR excl. VAT</td><td>AWS Lightsail containers and managed database, 22 to 25 USD. Hetzner 4 GB, 19.99 EUR, because its cheaper plans are sold out</td><td>One server is a single point of failure. The recovery target is one working day, and we run our own updates and backups</td></tr>
+    <tr><td class="c1">Patron website</td><td>Static pages, with one small Worker for link previews</td><td>Server rendering, which needs a paid plan or a running server</td><td>Book data loads in the browser after the page opens. Search-engine visibility for book pages rests on the Worker's preview tags alone</td></tr>
+    <tr><td class="c1">Sign-in</td><td>Built into core: email and password, plus Google</td><td>Cognito, whose hosted login has no Vietnamese. Auth0, whose free plan cannot customise login or email, and next plan is from 35 USD</td><td>We own password handling, email verification and the Google sign-in code</td></tr>
+    <tr><td class="c1">Reaching the server</td><td>Cloudflare Tunnel, with no inbound web ports</td><td>Caddy with Let's Encrypt and a firewall allowlist</td><td>More dependence on Cloudflare, with no quick way to bypass it in an outage</td></tr>
+    <tr><td class="c1">Code layout</td><td>Four MIT-licensed repositories</td><td>One combined repository</td><td>The patron site and core deploy separately, so the API may only add within <code>v1</code></td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>How families' data is protected</h2>
+  <ul>
+    <li><strong>Kept out entirely:</strong> data about children, and the pickup address, which is shared only in the chat groups. <span class="ad">AD-14</span></li>
+    <li><strong>Before a parent can reserve:</strong> a verified email, an adult tick and acceptance of the current usage policy, on every sign-up path including Google. <span class="ad">AD-8</span></li>
+    <li><strong>Separate doors:</strong> parents reach only the public API. The librarian tool sits behind a second sign-in check, and a parent's session cannot open it. <span class="ad">AD-5, AD-7</span></li>
+    <li><strong>Deletion that holds up:</strong> an automated test deletes a patron, then searches a full database dump for any trace. A restore from backup deletes those accounts again before the app starts. <span class="ad">AD-14, AD-17</span></li>
+    <li><strong>Backups:</strong> encrypted nightly, kept 30 days in an EU bucket, readable only with a key both founders hold offline. <span class="ad">AD-17</span></li>
+    <li><strong>Who else sees patron data:</strong> only OVHcloud, Cloudflare, the email provider and, for parents who choose it, Google. Each one is named in the privacy notice. <span class="ad">AD-18</span></li>
+  </ul>
+</section>
+
+<section id="unproven">
+  <h2>What is still unproven</h2>
+  <p>Each assumption has a fallback, and the first stories test them.</p>
+  <div class="wrap"><table>
+    <tr><th>We assume</th><th>Tested in</th><th>If it fails</th></tr>
+    <tr><td>One Payload container works on two hostnames</td><td>First catalogue story</td><td>Use one hostname with the sign-in check on staff paths, and a separate browser profile for librarians</td></tr>
+    <tr><td>Our own sign-in routes can issue Payload's session cookie</td><td>First patron site story</td><td>Open a short list of Payload's own routes and translate their errors</td></tr>
+    <tr><td>The Worker stays under the 10 ms free-plan limit</td><td>First patron site story</td><td>Pay for Workers, or drop link previews</td></tr>
+    <tr><td>Image uploads to Cloudflare storage work with the current libraries</td><td>First upload story</td><td>Change one checksum setting</td></tr>
+    <tr><td>Cloudflare's free rate-limit rule covers all sensitive paths</td><td>First deploy</td><td>Rely on the limiter inside core</td></tr>
+    <tr><td>Cuttable features can be removed without touching essential ones</td><td>Each epic's review</td><td>Replan with the product owner</td></tr>
+  </table></div>
+</section>
+
+<section id="decisions">
+  <h2>What the founders need to decide</h2>
+  <div class="wrap"><table>
+    <tr><th>Question</th><th>Needed by</th><th>Why it matters</th></tr>
+    <tr><td><span class="first">Answer first.</span> Does the patron list reveal ethnic origin under GDPR Article 9? Is an impact assessment needed?</td><td>Before the sign-up wording is written</td><td>It can change the sign-up flow, and whether Cloudflare can stay in the API path</td></tr>
+    <tr><td>How long do we keep accounts with no loans, and proof of acceptance after deletion? Do backups with re-deletion satisfy erasure?</td><td>Before sign-up opens</td><td>Sets the retention rules and the privacy notice</td></tr>
+    <tr><td>Who is the controller for the chat groups, what is Google's role, and do online terms meet the written agreement requirement?</td><td>Before sign-up opens</td><td>Sets what the privacy notice must say</td></tr>
+    <tr><td>Who writes the privacy notice, and where are it and the usage policy published?</td><td>Before sign-up opens</td><td>Sign-up stays closed until both are published</td></tr>
+    <tr><td>Loan period, maximum books and renewal limits for the first loan</td><td>End of December 2026</td><td>Starting values, changeable later without a code change</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>What happens next</h2>
+  <div class="wrap"><table>
+    <tr><th>Target</th><th>Milestone</th></tr>
+    <tr class="pick"><td class="c1">End of November 2026</td><td>Catalogue in use, with the 300 books imported. This is built first, because reservations need books and accounts</td></tr>
+    <tr><td class="c1">Mid-December 2026</td><td>Patron website live, replacing the coming-soon page at <code>piviki.fi</code></td></tr>
+    <tr><td class="c1">End of December 2026</td><td>First real loan</td></tr>
+  </table></div>
+  <p>These are internal targets, and the library opens when the software is ready. If a milestone slips, features are cut in a fixed order: ISBN lookup, self-renewal, due-date reminders, then the English interface. Reservations, the queue, the pickup loop, check-in, the ready-for-pickup email and the overdue block are never cut.</p>
+</section>
+
+<footer>The <span class="ad">AD-n</span> labels point to numbered decisions in the architecture spine, <code>architecture-piviki.md</code>, which is the binding version if this page and the spine ever differ.</footer>
+
+</main>
+</body>
+</html>

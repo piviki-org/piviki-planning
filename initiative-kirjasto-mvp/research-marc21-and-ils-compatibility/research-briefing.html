@@ -1,0 +1,517 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Technical research: MARC 21 and ILS compatibility</title><style>
+:root{--bg:#fff;--fg:#1d1f23;--mut:#5b6170;--card:#f6f7f9;--line:#e3e5ea;--acc:#2a5bd7;
+--hi:#1f7a4d;--hib:#e3f4ea;--me:#8a6100;--meb:#fbf1d9;--lo:#a8321f;--lob:#fbe4df;--un:#7a1fa8;--unb:#f1e2fa}
+@media (prefers-color-scheme:dark){:root{--bg:#15171b;--fg:#e6e8ec;--mut:#9aa1ad;--card:#1e2127;--line:#2c3038;--acc:#7ea2ff;
+--hi:#7fd8a6;--hib:#173226;--me:#f0c860;--meb:#3a2f12;--lo:#ff9b88;--lob:#3d1d17;--un:#d9a6ff;--unb:#33173f}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg)}
+.wrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:40px;max-width:1240px;margin:0 auto;padding:32px 24px}
+nav{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);overflow:auto;font-size:14px}
+nav ul{list-style:none;padding-left:12px;margin:4px 0}nav>div>ul{padding-left:0}nav a{color:var(--mut);text-decoration:none}nav a:hover{color:var(--acc)}
+header{border-bottom:1px solid var(--line);margin-bottom:24px;padding-bottom:16px}header h1{margin:0 0 8px;font-size:28px;line-height:1.25}
+.meta{color:var(--mut);font-size:14px}.meta span{margin-right:16px;white-space:nowrap}
+.dec{background:var(--card);border-left:4px solid var(--acc);padding:12px 16px;border-radius:6px;margin:12px 0}
+h2{margin-top:44px;padding-top:8px;border-top:1px solid var(--line);font-size:22px}
+h2#executive-summary{border:0;margin-top:0}
+h2#executive-summary, h2#executive-summary ~ *:not(h2#executive-summary ~ h2 ~ *):not(h2){}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{background:var(--card)}
+code{background:var(--card);padding:1px 5px;border-radius:4px;font-size:.9em}
+a{color:var(--acc)}a.cite{font-size:.8em;text-decoration:none;vertical-align:super}
+.b{display:inline-block;font-size:.75em;font-weight:600;padding:0 7px;border-radius:10px;border:1px solid currentColor;line-height:1.6;white-space:nowrap}
+.b-high{color:var(--hi);background:var(--hib)}.b-medium{color:var(--me);background:var(--meb)}.b-low{color:var(--lo);background:var(--lob)}
+.b-unv{color:var(--un);background:var(--unb);border-width:2px;text-transform:uppercase;letter-spacing:.03em}
+details summary{cursor:pointer;font-weight:600;margin:8px 0}
+.legend{font-size:13px;color:var(--mut);margin-top:8px}
+@media (max-width:860px){.wrap{grid-template-columns:1fr}nav{position:static;max-height:none;border-bottom:1px solid var(--line);padding-bottom:12px}}
+</style></head><body><div class="wrap">
+<nav><strong>Contents</strong><div class="toc">
+<ul>
+<li><a href="#executive-summary">Executive summary</a></li>
+<li><a href="#1-what-a-marc-21-record-needs-from-you">1. What a MARC 21 record needs from you</a></li>
+<li><a href="#2-classification-ykl-and-ddc">2. Classification: YKL and DDC</a></li>
+<li><a href="#3-open-ils-data-models-migration-and-copy-identity">3. Open ILS data models, migration and copy identity</a></li>
+<li><a href="#4-the-finnish-ecosystem">4. The Finnish ecosystem</a></li>
+<li><a href="#5-interfaces-and-tooling">5. Interfaces and tooling</a></li>
+<li><a href="#cross-dimension-insights">Cross-dimension insights</a></li>
+<li><a href="#recommendations">Recommendations</a></li>
+<li><a href="#open-questions">Open questions</a></li>
+<li><a href="#source-appendix">Source appendix</a></li>
+<li><a href="#staleness-map">Staleness map</a></li>
+</ul>
+</div>
+</nav><main>
+<header><h1>MARC 21 and ILS compatibility of the Piviki titles and copies model</h1>
+<div class="meta"><span>Type: technical</span><span>Date: 2026-11-03</span><span>Preset: standard (2 rounds)</span><span>Validation: normal</span><span>Claims: 11 verified, 11 unverified</span></div>
+<div class="dec"><strong>Decision:</strong> Which data and interface decisions in the Piviki titles and copies model would make later MARC 21 exchange or migration to an ILS costly, and the cheapest way to avoid each</div>
+<div class="legend">Confidence: <span class="b b-high">high</span> <span class="b b-medium">medium</span> <span class="b b-low">low</span> <span class="b b-unv">unverified</span>. Unmarked claims are high confidence from primary sources.</div>
+</header><p><strong>Decision this research serves:</strong> Which data and interface decisions in the Piviki titles and copies model would make later MARC 21 exchange or migration to an ILS costly, and the cheapest way to avoid each</p>
+<h2 id="executive-summary">Executive summary</h2>
+<p><strong>Do this:</strong> spend about a day's schema work in <code>epic-librarian-catalogue</code> instead of building any MARC code now.
+- Give every copy a unique, permanent barcode-style code.
+- Store bibliographic data as structured parts: contributors with roles, a split title, publication data, ISBN, a MARC language code, an audience flag.
+- Store classification as repeatable (scheme, notation) pairs: YKL plus optional DDC.
+- Keep a stable source identifier on any record copied from Melinda.</p>
+<p>With that schema, MARC 21 export later is a mapping job with a maintained library (<code>@natlibfi/marc-record-serializers</code>), not a re-cataloguing job.</p>
+<p><strong>The three findings that drive this:</strong>
+1. <strong>Copy identity is the single costly gap.</strong> Evergreen requires a unique barcode on every copy <a class="cite" href="#src-5">[5]</a>. Koha matches re-imported items on item number or barcode <a class="cite" href="#src-3">[3]</a>. Loan migration is keyed on barcodes <a class="cite" href="#src-16">[16]</a>, and migrations without them end in shelf checks <a class="cite" href="#src-11">[11]</a>. AD-9's <code>scanId</code> identifies a scan, not a labelled book. The decision on 3 November 2026 to turn it into a printed, scannable copy barcode closes this gap.
+2. <strong>Melinda is the cheapest route to MARC-quality data.</strong> Its open SRU API worked without a login in queries on 3 November 2026, and Melinda holds 828 records with Vietnamese ISBNs (978-604) <a class="cite" href="#src-49">[49]</a>. Vietnamese children's records there already carry YKL <code>84.948</code>, field 008 coded juvenile <code>vie</code>, and 041 <code>vie</code> <a class="cite" href="#src-50">[50]</a>. Copying them by ISBN (R12) fills the structured fields for free, provided the schema has somewhere to put them.
+3. <strong>Both classification schemes are free to store.</strong> YKL is CC0 <a class="cite" href="#src-29">[29]</a> with LC source code <code>ykl</code> <a class="cite" href="#src-27">[27]</a>. DDC numbers need no licence; only captions do <a class="cite" href="#src-30">[30]</a><a class="cite" href="#src-31">[31]</a>. Vietnamese libraries mostly use DDC 23 (2019 evidence) <a class="cite" href="#src-32">[32]</a>.</p>
+<p><strong>Biggest caveat:</strong> the realistic exchange partner is PIKI, and PIKI's ILS is about to change. Aurora support is ending <a class="cite" href="#src-40">[40]</a>, and the new agreement makes the system a joint procurement <a class="cite" href="#src-41">[41]</a>. That claim is just past its re-check date (see the staleness map). No vendor is named, so target plain MARC 21 in UTF-8 (ISO 2709/MARCXML), not one system's dialect. Whether an association can contribute records to Finna or Melinda at all is undocumented <a class="cite" href="#src-46">[46]</a><a class="cite" href="#src-52">[52]</a>.</p>
+<p><strong>Architecture impact (agreed with the user, 3 November 2026):</strong> <code>scanId</code> is replaced by <code>copies.barcode</code>. Core generates it from one database sequence (prefix plus zero-padded number), it is printed on a label on every book, and librarians scan it for every copy task. The initial load is a one-time operation that creates exactly one copy per title:
+1. The scan script classifies each book (computer vision plus an open API or an LLM) and follows the API contract.
+2. One import call creates the draft title and its single copy in one transaction and returns the barcode. A re-run skips any book whose title already exists, matching on ISBN first, else normalised title plus author plus volume or series number. Copies carry no bibliographic data, so they are never compared.
+3. After librarian review and publishing, labels are printed in scan-batch order with the barcode plus title and author, so each label can be matched to its book. Barcodes of deleted drafts are never reused.</p>
+<p>Additional copies are added by hand in the librarian tool, which generates the next barcode the same way. AD-9 needs updating through the architecture skill: the rename, the atomic import call, the title match key, and lookup by barcode in the librarian tool.</p>
+<h2 id="1-what-a-marc-21-record-needs-from-you">1. What a MARC 21 record needs from you</h2>
+<p><strong>Bottom line:</strong> A MARC record is built from structured parts, not display strings. Each part you don't keep separately now is something someone has to re-key by hand later. Encoding needs only one discipline: store Unicode NFC and compare strings after normalising both sides.</p>
+<p><strong>Version.</strong> MARC 21 Bibliographic is at Update No. 42 (May 2026) <a class="cite" href="#src-18">[18]</a>. OCLC's validation installed it in July 2026 <span class="b b-medium">medium</span> <a class="cite" href="#src-19">[19]</a>. Update 42 "redefines the 041 language code field" <span class="b b-medium">medium</span> <a class="cite" href="#src-36">[36]</a>, so re-check field 041 before writing the export mapping. The Holdings format is unchanged <a class="cite" href="#src-36">[36]</a>.</p>
+<p><strong>Record header (Leader).</strong> Values a small book catalogue would use <a class="cite" href="#src-20">[20]</a>:</p>
+<table>
+<thead>
+<tr>
+<th>Position</th>
+<th>Meaning</th>
+<th>Value to use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>06</td>
+<td>type of record</td>
+<td><code>a</code> (language material)</td>
+</tr>
+<tr>
+<td>07</td>
+<td>bibliographic level</td>
+<td><code>m</code> (monograph)</td>
+</tr>
+<tr>
+<td>09</td>
+<td>character coding</td>
+<td><code>a</code> (Unicode)</td>
+</tr>
+<tr>
+<td>17</td>
+<td>encoding level</td>
+<td><code>7</code> minimal, <code>3</code> abbreviated or <code>5</code> partial: honest for volunteer records, and lets an ILS upgrade them later</td>
+</tr>
+<tr>
+<td>18</td>
+<td>punctuation</td>
+<td><code>c</code> (ISBD punctuation omitted) or blank (non-ISBD)</td>
+</tr>
+</tbody>
+</table>
+<p>The values for positions 17 and 18 are my inference, not a published rule.</p>
+<p><strong>Fields that need structured source data.</strong> The MARC 21 field definitions set out the parts below, but no source found in this research listed which parts a minimal record must have:
+- <strong>Names.</strong> Fields 100/700 carry each name with its role, so author, illustrator and translator must be separate people, not one "author" string. To set the first indicator (0 forename, 1 surname, 3 family name), an exporter must know which part of the name is the entry element <a class="cite" href="#src-34">[34]</a>.
+  - Vietnamese names put the family name first (Nguyễn Nhật Ánh). Nothing found in this research settles how RDA/LC enter them, so record name parts and the entry element explicitly instead of guessing.
+- <strong>Title.</strong> Title proper, subtitle and statement of responsibility are separate subfields (245 $a $b $c).
+- <strong>Edition and publication.</strong> Edition (250); place, publisher and year (264).
+- <strong>Series</strong> (490).
+- <strong>ISBN</strong> (020), with its qualifier ($q), one per format.
+- <strong>Language.</strong> Field 041 and positions 35–37 of field 008 use MARC language codes: Vietnamese is <code>vie</code> <a class="cite" href="#src-33">[33]</a>, not the BCP 47 <code>vi</code> your architecture uses for interface language (AD-11). Keep bibliographic language as its own field.
+- <strong>Audience.</strong> Position 22 of field 008 is the target audience (<code>j</code> = juvenile).</p>
+<p><strong>Holdings (copies).</strong> Copy data travels in two ways:
+- <strong>Standard MARC 21 Holdings (852)</strong> <a class="cite" href="#src-23">[23]</a>:
+  - $a location, $h classification part, $i item part, $j shelving control number
+  - $p piece designation: "a bar code number or an accession number"
+  - $t copy number
+  - first indicator 7 + $2 for the shelving scheme
+- <strong>Koha's embedded 952</strong> <a class="cite" href="#src-3">[3]</a>: the call number lives on the item ($o), not the bib.</p>
+<p>A YKL-shelved copy would export roughly as <code>852 7_ $h 84.2 $i NGU $p &lt;barcode&gt; $2 ykl</code>. That example is my reading of the field definitions.</p>
+<p><strong>Encoding (Vietnamese).</strong>
+- A Unicode record must have position 09 of the record header (Leader) set to <code>a</code>. Combining diacritics come <em>after</em> the base letter, and the spec orders stacked marks (ế, ặ) explicitly. The specification doesn't require either NFC or NFD <a class="cite" href="#src-21">[21]</a>.
+- Koha stores NFC but "all exports (MARC utf8, MARCXML) are performed using NFD normalization" (open bug, March 2026) <a class="cite" href="#src-22">[22]</a>. A record round-tripped through Koha comes back decomposed, so any matching on title or author must normalise both sides.
+- Your AD-10 NFC-on-write plus a normalised search column already covers this. Apply the same normalisation when importing MARC.
+- Avoid MARC-8 entirely: converting from it yields decomposed text and mixed forms <span class="b b-medium">medium</span> <a class="cite" href="#src-37">[37]</a>.</p>
+<p><strong>Finnish practice.</strong>
+- The Finnish MARC 21 application is published on the National Library of Finland's site <a class="cite" href="#src-25">[25]</a><a class="cite" href="#src-26">[26]</a>.
+- Subjects are coded <code>650 #7 ‡a &lt;term&gt; ‡2 yso/fin ‡0 &lt;YSO URI&gt;</code>. One concept URI carries both the Finnish and the Swedish label <a class="cite" href="#src-26">[26]</a>.
+- No Finnish minimal-level definition was found in this research.</p>
+<p><em>Research stopped after the maximum two rounds, with core questions answered. Still open: Melinda minimum cataloguing level, Vietnamese name entry under RDA, 041 after Update 42.</em></p>
+<h2 id="2-classification-ykl-and-ddc">2. Classification: YKL and DDC</h2>
+<p><strong>Bottom line:</strong> Both schemes are free to <em>store</em>. Model classification as repeatable (scheme, notation, edition) pairs on the title, and keep the shelf mark on the copy.</p>
+<p><strong>YKL.</strong>
+- Published on Finto by the National Library, authored by Helsinki City Library and the YKL working group, licensed CC0 1.0, last modified January 2026 <a class="cite" href="#src-29">[29]</a>.
+- MARC carries it in field 084 with <code>‡2 ykl</code>, for example, <code>084 ## ‡a 37.8 ‡2 ykl</code> <a class="cite" href="#src-25">[25]</a>. <code>ykl</code> is the registered LC source code, formerly <code>fplcs</code> (list dated September 2026) <a class="cite" href="#src-27">[27]</a>.
+- Finland adds a local first indicator <code>9</code> for the YKL fiction subclass <a class="cite" href="#src-25">[25]</a>.
+- Libraries put children's fiction under 84.2 <span class="b b-medium">medium, practice evidence</span> <a class="cite" href="#src-35">[35]</a>.</p>
+<p><strong>DDC.</strong>
+- Storing DDC numbers needs no licence. OCLC's WebDewey terms let records "display DDC numbers, but shall not display DDC captions" <a class="cite" href="#src-30">[30]</a>, and the Deutsche Nationalbibliothek states "In principle, no license is required to classify media using DDC numbers" <a class="cite" href="#src-31">[31]</a>.
+- So show DDC captions or schedules to patrons only under a licence.
+- MARC 082 carries the number. The first indicator distinguishes full (0) and abridged (1) editions; $2 takes the form edition/language/date, for example, <code>23/eng/20190402</code> <a class="cite" href="#src-28">[28]</a>. A Vietnamese-edition code would plausibly be <code>23/vie</code>, but that is <span class="b b-unv">unconfirmed</span>.
+- Vietnam's National Library translated DDC 23 (2013), and a 2019 review reported "most libraries have used DDC 23" <span class="b b-medium">medium-high, 2019</span> <a class="cite" href="#src-32">[32]</a>. Vietnamese source records therefore plausibly already carry DDC numbers worth keeping.</p>
+<p><strong>Shelf mark.</strong> In Finnish public libraries the shelf mark is the YKL class plus the <em>pääsana</em> (headword). The pääsana is the main-entry author's surname, or else the title, and its first three letters go on the spine label <span class="b b-medium">medium, one library&#x27;s 2015 guide</span> <a class="cite" href="#src-35">[35]</a>. That makes it derived data.</p>
+<p><em>Research stopped after the maximum two rounds, with coverage.</em></p>
+<h2 id="3-open-ils-data-models-migration-and-copy-identity">3. Open ILS data models, migration and copy identity</h2>
+<p><strong>Bottom line:</strong> All three open ILSs agree with your model on structure. The holds and the four copy states map cleanly. The costly gap is copy identity: every import, re-import and loan migration path keys physical copies on a unique barcode, and the plan has none.</p>
+<p><strong>Structure.</strong>
+- Koha splits a record into the bib (MARC) and its items. Items travel in MARC 952 ($a owning library, $b holding library, $o call number, $p barcode, $y item type, $8 collection, $d date acquired, $e source of acquisition, which the schema describes as "where the item was purchased") <a class="cite" href="#src-1">[1]</a>.
+- Evergreen goes bib, then call number (volume), then copy. Every copy must hang off a call number <a class="cite" href="#src-5">[5]</a>.
+- FOLIO goes instance, then holdings, then item <a class="cite" href="#src-8">[8]</a>. Its data import matches items on a barcode carried in a 9xx field, and holdings on HRID or UUID <span class="b b-medium">medium</span> <a class="cite" href="#src-10">[10]</a>.
+- A titles-and-copies model fits all three. Evergreen and FOLIO need a middle "holdings / call number" level that an importer can synthesise from a call number and location on each copy <a class="cite" href="#src-5">[5]</a><a class="cite" href="#src-7">[7]</a><a class="cite" href="#src-8">[8]</a>.</p>
+<p><strong>Copy identity.</strong></p>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Barcode rule</th>
+<th>Fallback for missing barcodes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Evergreen</td>
+<td><code>barcode TEXT NOT NULL</code>, unique among non-deleted copies <a class="cite" href="#src-5">[5]</a></td>
+<td>Batch import can generate barcodes with a prefix; an <code>@@</code> barcode is rewritten to <code>@@</code> plus the copy id <a class="cite" href="#src-7">[7]</a></td>
+</tr>
+<tr>
+<td>Koha</td>
+<td><code>VARCHAR(20)</code>, nullable, unique when present <a class="cite" href="#src-1">[1]</a></td>
+<td>None found</td>
+</tr>
+<tr>
+<td>FOLIO</td>
+<td>Optional in the schema but treated as unique in practice <a class="cite" href="#src-8">[8]</a><a class="cite" href="#src-17">[17]</a></td>
+<td>A recognised clean-up cost: libraries add suffixes to make barcodes unique, or move duplicates into a "former identifier" field <a class="cite" href="#src-17">[17]</a></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Koha's staged import can replace existing items on re-import, and it reports items it skipped as duplicate barcodes <a class="cite" href="#src-3">[3]</a>.</li>
+<li>The Missouri Sierra-to-FOLIO post-mortem found barcode errors on its first item loads, fixed only by finding the books on the shelf. Some items never migrated <a class="cite" href="#src-11">[11]</a>.</li>
+<li>No source quantified the cost of retro-barcoding. That cost is inferred, not evidenced.</li>
+</ul>
+<p><strong>Barcode practice.</strong> Libraries mostly use Codabar or Code 39. A common layout is 14 digits: a type digit (3 = item), a library code, a sequence number and a check digit. There is no universal standard, so match the target ILS before printing labels <span class="b b-medium">medium</span> <a class="cite" href="#src-14">[14]</a>. Koha's auto-barcode feature generates the next number from the highest barcode already stored, so imported barcodes in mixed formats confuse it <span class="b b-medium">medium</span> <a class="cite" href="#src-15">[15]</a>.</p>
+<p><strong>Status.</strong> Each system's statuses can represent your four states:
+- <strong>Koha</strong> keeps lost, damaged, withdrawn and not-for-loan as separate flags. Lost, damaged and withdrawn each record the date they were set. "On loan" is derived from the due date on the item, and "held" lives on the hold, not the item <a class="cite" href="#src-1">[1]</a>.
+- <strong>Evergreen</strong> has one status column. Available, Checked out, On holds shelf and Lost all exist <a class="cite" href="#src-6">[6]</a>.
+- <strong>FOLIO</strong> has a fixed list of 21 statuses that includes Available, Checked out, Awaiting pickup and Declared lost <a class="cite" href="#src-9">[9]</a>.</p>
+<p>The mapping is lossless as long as "lost" carries a date and "on loan" can be derived from the active loan.</p>
+<p><strong>Holds and queues.</strong> Koha's <code>reserves</code> row matches your design closely <a class="cite" href="#src-2">[2]</a>:
+- the title is required, and the copy is null until the hold is filled
+- holds are title-level by default
+- <code>priority</code> is the queue position
+- there are separate dates for waiting since and expiry
+- <code>found</code> is null while pending and <code>W</code> when waiting on the shelf (codes medium confidence)</p>
+<p>A per-title queue with the copy assigned at <code>ready</code> is the native Koha semantics.</p>
+<p><strong>Loan history and anonymisation.</strong> Koha anonymises old checkouts by swapping the patron for a designated <code>AnonymousPatron</code>, which keeps per-copy loan counts <a class="cite" href="#src-4">[4]</a>. Your plan to anonymise after the retention period, keeping the copy and dropping the patron, maps directly onto this.</p>
+<p><strong>What a migration needs from every copy.</strong> A vendor guide <span class="b b-medium">medium</span> lists <a class="cite" href="#src-12">[12]</a>:
+- barcode
+- library or branch
+- shelving location
+- item type
+- call number
+- copy number
+- price
+- circulation status
+- lost/damaged/withdrawn status</p>
+<p>Its named pitfalls are exports without barcodes, branches or item types; free-text values that must be mapped to codes; and one-row-per-copy exports that turn into duplicate bibs. The Missouri post-mortem adds that location codes had to match exactly, and that identifiers missing their source prefix (035 without "(OCoLC)") are hard to repair later <a class="cite" href="#src-11">[11]</a>.</p>
+<p><strong>Patrons, loans and holds.</strong> Koha's patron import needs a <code>cardnumber</code> and a <code>surname</code>, and carries legacy ids as <code>CODE:value</code> patron attributes <a class="cite" href="#src-4">[4]</a>. Moving active loans has no built-in Koha importer. Practitioners write scripts that look up item barcode → item and cardnumber → patron, or replay an offline-circulation file keyed by barcode. That evidence is a 2011 thread and is low confidence; current tooling was not checked <a class="cite" href="#src-16">[16]</a>.</p>
+<p><strong>Donors.</strong> MARC 541 (Source of Acquisition) has a privacy indicator (0 = private, 1 = not private), with $a source, $c method (for example, gift), $d date and $e accession number <a class="cite" href="#src-13">[13]</a>. Koha's 952$e is a text field its schema describes as "where the item was purchased", so a donor fits it only loosely <a class="cite" href="#src-1">[1]</a>. Whether Koha hides it from the public catalogue (OPAC) by default was not checked.</p>
+<p><em>Research stopped after the maximum two rounds, with coverage. Still open: Koha OPAC visibility of 952$e, current loan-import tooling, Finnish barcode conventions.</em></p>
+<h2 id="4-the-finnish-ecosystem">4. The Finnish ecosystem</h2>
+<p><strong>Bottom line:</strong> Finland gives you free, open, CC0-friendly <em>inputs</em>: Melinda records over SRU, YKL, and Fennica. Its <em>outputs</em> (Finna, Melinda membership) are designed for municipal libraries running a real ILS. The realistic exchange partner is a library consortium such as PIKI, not the national services directly.</p>
+<p><strong>Which ILS PIKI runs.</strong>
+- PIKI ran Axiell Aurora: a 2019 City of Tampere agreement (about €175k/year) and a 2017 Helsinki decision both name it <span class="b b-medium">medium</span> <a class="cite" href="#src-38">[38]</a><a class="cite" href="#src-39">[39]</a>.
+- Axiell is ending Aurora support, and Aurora libraries are moving, for example, to Axiell Quria in 2027 <span class="b b-medium">medium, October 2026</span> <a class="cite" href="#src-40">[40]</a>.
+- PIKI's updated cooperation agreement (effective around September 2026) makes the library system a binding joint procurement signed by Tampere, with no vendor named <a class="cite" href="#src-41">[41]</a>.
+- <strong>PIKI is therefore likely to change systems soon, to an ILS not yet known.</strong> Don't build against any one vendor's format; target plain MARC 21.
+- Koha-Suomi Oy is owned by more than 100 municipalities <a class="cite" href="#src-42">[42]</a>, but no current figure for the share of Finnish libraries on Koha was found.
+- Helsinki's Helmet runs Sierra and is procuring a replacement <span class="b b-medium">medium</span> <a class="cite" href="#src-48">[48]</a>.</p>
+<p><strong>Melinda (national union catalogue).</strong>
+- Melinda's Open Data SRU and OAI-PMH endpoints are open (wiki updated May 2025). Some other instances are IP-restricted to Melinda libraries <a class="cite" href="#src-43">[43]</a>. Live queries on 3 November 2026 worked without a login <a class="cite" href="#src-49">[49]</a>. SRU and Z39.50 are free and intended for single records or small sets <span class="b b-medium">medium</span> <a class="cite" href="#src-44">[44]</a>.
+- Joining Melinda is free from the National Library's side, but requires RDA plus MARC 21, matching subjects to YSO, and an ILS that can transfer records out <a class="cite" href="#src-46">[46]</a>. Eligibility for a non-library association isn't stated.
+- In the Koha-Suomi pattern, the National Library harvests records back from the ILS's OAI-PMH interface <span class="b b-medium">medium, 2020</span> <a class="cite" href="#src-47">[47]</a>.
+- Fennica, the national bibliography, is CC0 <a class="cite" href="#src-45">[45]</a>. No licence statement covering Melinda as a whole was found.</p>
+<p><strong>Live coverage test (3 November 2026).</strong>
+- Melinda has <strong>828 records with ISBN prefix 978-604</strong> (Vietnam) <a class="cite" href="#src-49">[49]</a> (re-run and confirmed). The prefix covers every Vietnamese publisher, so only some of these are children's books. One sample was conference proceedings.
+- A query for one popular Vietnamese children's author returned 101 records, carrying <a class="cite" href="#src-50">[50]</a>:
+  - field 008 coded juvenile and <code>vie</code>
+  - field 041 <code>$a vie</code>
+  - YKL <code>084 ‡a 84.948 ‡2 ykl</code>, the YKL class for Vietnamese-language fiction</p>
+<p>Children's fiction also appears under 85.1948 / 85.2948.
+- In the sampled records, Vietnamese text is stored <strong>decomposed (NFD)</strong>, and some records have lost diacritics partly or wholly <a class="cite" href="#src-50">[50]</a>.
+- Finna shows 4,397 Vietnamese-language records nationally, <strong>335 held by PIKI-kirjastot</strong> <a class="cite" href="#src-51">[51]</a>.
+- So copy cataloguing from Melinda by ISBN is realistic for part of the collection. Every imported record must be normalised to NFC and matched in a way that ignores diacritics.</p>
+<p><strong>Finna (national discovery portal).</strong>
+- Funding from the Ministry of Education and Culture covers public, university and polytechnic libraries, certain archives and qualifying museums. Others "may in future join" at list price. No category fits an association <a class="cite" href="#src-52">[52]</a>.
+- Joining needs your own back-end system with an OAI-PMH interface serving MARC 21, metadata published CC0, and about six months <a class="cite" href="#src-52">[52]</a>.
+- Finna itself serves MARCXML over OAI-PMH at <code>api.finna.fi/OAI/Server</code> <a class="cite" href="#src-53">[53]</a>.</p>
+<p><strong>Finto vocabularies.</strong> YSO (General Finnish Ontology) is CC BY 4.0, not CC0. Its labels are in Finnish, Swedish, English and Northern Sami, with no Vietnamese. It's available through the Skosmos REST API, including as MARCXML <a class="cite" href="#src-54">[54]</a>.</p>
+<p><strong>Vietnam.</strong> Vietnam has a national MARC 21 standard, TCVN 7539:2005 <span class="b b-medium">medium</span> <a class="cite" href="#src-59">[59]</a>. No public Z39.50/SRU service at the National Library of Vietnam was found.</p>
+<p><em>Research stopped after the maximum two rounds. Still open: PIKI's next ILS and its timing, Koha share, Helmet outcome, Melinda licence as a whole, whether an association can join Melinda through a member.</em></p>
+<h2 id="5-interfaces-and-tooling">5. Interfaces and tooling</h2>
+<p><strong>Bottom line:</strong> You don't need to build MARC export now. A well-structured schema can be serialised later with a maintained TypeScript library from the National Library of Finland.</p>
+<p><strong>What ILSs import.</strong> Koha takes ISO 2709 (.mrc) or MARCXML, UTF-8 by default <a class="cite" href="#src-3">[3]</a>. Evergreen takes .mrc or MARCXML, in batches of up to about 5,000 records <a class="cite" href="#src-7">[7]</a>. Neither documents MARC-in-JSON. FOLIO's import formats are <span class="b b-unv">unverified</span> in this research (its documentation page returned 404). So <strong>ISO 2709 or MARCXML in UTF-8</strong> is the target.</p>
+<p><strong>Node and TypeScript libraries.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>Maintainer</th>
+<th>Licence</th>
+<th>Latest</th>
+<th>Formats</th>
+<th>Activity and caveats</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@natlibfi/marc-record</code></td>
+<td>National Library of Finland</td>
+<td>MIT</td>
+<td>11.0.3, August 2026</td>
+<td>Record model</td>
+<td>Written in TypeScript and ships types; 54 commits since 2024 <a class="cite" href="#src-57">[57]</a></td>
+</tr>
+<tr>
+<td><code>@natlibfi/marc-record-serializers</code></td>
+<td>National Library of Finland</td>
+<td>MIT</td>
+<td>11.0.5, September 2026</td>
+<td>Text, own JSON shape, Aleph Sequential, ISO 2709 (UTF-8, byte-length correct), MARCXML, OAI MARCXML</td>
+<td>Monthly releases through 2026; no declared types <a class="cite" href="#src-56">[56]</a><a class="cite" href="#src-57">[57]</a></td>
+</tr>
+<tr>
+<td><code>marcjs</code></td>
+<td>Individual maintainer</td>
+<td>MIT</td>
+<td>3.0.3, September 2026</td>
+<td>Reads and writes ISO 2709, MARCXML and LoC MARC-in-JSON; UTF-8 only</td>
+<td>Sporadic; open issue says its parsers "silently accept broken data" <a class="cite" href="#src-58">[58]</a></td>
+</tr>
+</tbody>
+</table>
+<p>For reading Melinda records and writing exports, <code>@natlibfi/*</code> is the stronger choice. Its maintainer runs Melinda.</p>
+<p><strong>Interfaces to expose later.</strong> To be harvestable, by Finna or by a consortium's ILS, the system would serve OAI-PMH with a <code>marc21</code> (MARCXML) metadata format and stable record identifiers <a class="cite" href="#src-52">[52]</a><a class="cite" href="#src-53">[53]</a>. Nothing here needs to exist in the MVP. What must exist from day one is a <strong>stable, never-reused identifier per title and per copy</strong>, because harvests and re-imports key on it <a class="cite" href="#src-3">[3]</a><a class="cite" href="#src-53">[53]</a>.</p>
+<p><em>Research stopped after the maximum two rounds, with coverage. Still open: FOLIO import formats.</em></p>
+<h2 id="cross-dimension-insights">Cross-dimension insights</h2>
+<ul>
+<li><strong>ISBN lookup is not just a nice-to-have.</strong> R12 sits in <code>epic-loan-care</code> as cuttable. Combining dimensions 1 and 4 shows it is also the cheapest way to get records an ILS will accept: Melinda supplies the YKL class, language, audience and structured name and title fields <a class="cite" href="#src-50">[50]</a>. But this only pays if <code>titles</code> can hold those parts. The schema decision is urgent; the lookup feature can wait.</li>
+<li><strong>One name decision serves two needs.</strong> The Finnish shelf mark uses the first letters of the main-entry name <a class="cite" href="#src-35">[35]</a>. To set the first indicator of MARC field 100, an exporter must know whether the entry element is a surname, forename or family name <a class="cite" href="#src-34">[34]</a>. Vietnamese names are family-name first, so recording each contributor's entry element serves both the spine label and the MARC export.</li>
+<li><strong>Decomposed Unicode arrives from both directions.</strong> Koha exports NFD <a class="cite" href="#src-22">[22]</a>, and Melinda records are NFD, with some diacritics lost <a class="cite" href="#src-50">[50]</a>. AD-10's NFC-on-write must therefore cover every way data comes in (scan script, Melinda import, future MARC import), not only librarian edits. Matching on title or author must ignore diacritics.</li>
+</ul>
+<h2 id="recommendations">Recommendations</h2>
+<p>Ranked by how costly the decision is to reverse later. Unless noted, each feeds the <code>epic-librarian-catalogue</code> stories, which create <code>titles</code> and <code>copies</code>.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Costly decision to avoid</th>
+<th>Cheapest fix now</th>
+<th>Confidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Copies identified only by the database id or a scan id</td>
+<td><strong><code>copies.barcode</code></strong> (replaces <code>scanId</code>): generated by core from one sequence, unique, permanent, never reused, at most 20 characters, plain ASCII digits with a prefix (for example, <code>PVK000123</code>). Printed on a label on every book and scanned for every copy task. Import re-runs match on the title (ISBN, else title plus author plus volume), never on copies, so <strong>update AD-9</strong>. Also keep title ids permanent and never reused <a class="cite" href="#src-1">[1]</a><a class="cite" href="#src-3">[3]</a><a class="cite" href="#src-5">[5]</a><a class="cite" href="#src-53">[53]</a></td>
+<td><span class="b b-high">High</span> (schemas, two systems agree)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>One free-text author string; title as one string</td>
+<td><code>contributors</code> as an ordered list of {name as written, entry element (surname / forename / family-name-first), role code from the MARC relator list: <code>aut</code>, <code>ill</code>, <code>trl</code>, …}. Title split into title, subtitle and statement of responsibility <a class="cite" href="#src-34">[34]</a></td>
+<td><span class="b b-medium">Medium</span> (field definitions; no minimal-level source)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>No edition, publication or physical-description fields</td>
+<td>Optional <code>edition</code>, <code>publisher</code>, <code>place</code>, <code>year</code> (integer), <code>pages</code>, <code>series</code> + number; repeatable <code>isbns</code> with a qualifier (paperback, hardback) <a class="cite" href="#src-49">[49]</a></td>
+<td><span class="b b-medium">Medium</span></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Using BCP 47 <code>vi</code> as the bibliographic language</td>
+<td>Separate <code>language</code> field (MARC/ISO 639-2/B: <code>vie</code>), repeatable for bilingual books, plus <code>audience = juvenile</code> on titles. Keep BCP 47 for interface language (AD-11) <a class="cite" href="#src-33">[33]</a></td>
+<td>High for the code; re-check 041 after Update 42 <a class="cite" href="#src-36">[36]</a></td>
+</tr>
+<tr>
+<td>5</td>
+<td>One classification column, or no scheme recorded</td>
+<td>Repeatable <code>classifications</code> of {scheme: <code>ykl</code> / <code>ddc</code>, notation, edition such as <code>23</code>} on titles. A <code>callNumber</code> (shelf mark) on the copy, computed from YKL plus the first three letters of the entry element and editable <a class="cite" href="#src-25">[25]</a><a class="cite" href="#src-27">[27]</a><a class="cite" href="#src-28">[28]</a><a class="cite" href="#src-35">[35]</a></td>
+<td><span class="b b-high">High</span></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Copy-catalogued records losing where they came from</td>
+<td>Store <code>sourceRecordId</code> with its source prefix (for example, Melinda's id with its control-number source), never a bare number <a class="cite" href="#src-11">[11]</a><a class="cite" href="#src-49">[49]</a></td>
+<td><span class="b b-medium">Medium</span> (one post-mortem)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Copies without a location or item type</td>
+<td><code>location</code> and <code>itemType</code> codes on each copy, even if every copy is <code>PIVIKI</code> / <code>BOOK</code> today. An importer needs exact codes <a class="cite" href="#src-11">[11]</a><a class="cite" href="#src-12">[12]</a></td>
+<td><span class="b b-medium">Medium</span></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Status that loses facts</td>
+<td>Keep <code>lost</code> with a <code>lostAt</code> date. Derive "on loan" from the active loan. Leave room for <code>damaged</code> / <code>withdrawn</code> as dated flags rather than new enum values. The plan is already close <a class="cite" href="#src-1">[1]</a><a class="cite" href="#src-6">[6]</a><a class="cite" href="#src-9">[9]</a></td>
+<td><span class="b b-high">High</span></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Text not normalised on import</td>
+<td>Extend AD-10's NFC normalisation to every way data comes in, and match on the normalised column <a class="cite" href="#src-22">[22]</a><a class="cite" href="#src-50">[50]</a></td>
+<td><span class="b b-high">High</span></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Donor exposed in an export</td>
+<td>When exporting, use MARC 541 with first indicator <code>0</code> (private), or leave the donor out. The current design is fine <a class="cite" href="#src-13">[13]</a></td>
+<td><span class="b b-high">High</span></td>
+</tr>
+<tr>
+<td>11</td>
+<td>Subjects as free text</td>
+<td>If subjects are added later, store {vocabulary, concept URI, label, language} (YSO is CC BY 4.0, so attribution is required) <a class="cite" href="#src-26">[26]</a><a class="cite" href="#src-54">[54]</a></td>
+<td><span class="b b-high">High</span></td>
+</tr>
+<tr>
+<td>—</td>
+<td>Building MARC export or OAI-PMH now</td>
+<td>Don't. Use <code>@natlibfi/marc-record</code> + <code>-serializers</code> (MIT, TypeScript) when a partner asks, and target ISO 2709 or MARCXML in UTF-8, not one vendor's dialect. Feeds a later epic <a class="cite" href="#src-56">[56]</a><a class="cite" href="#src-57">[57]</a></td>
+<td><span class="b b-medium">Medium</span></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Labels:</strong> print <code>copies.barcode</code> as Code 39 or Codabar, the symbologies most library scanners read, after checking what the receiving ILS expects <a class="cite" href="#src-14">[14]</a>. Print after review and publishing, in scan-batch order, with the title and author on each label.</p>
+<p><strong>For <code>epic-loan-care</code> (R12):</strong> use Melinda SRU (<code>sru.api.melinda.kansalliskirjasto.fi/bib</code>, query <code>bath.isbn=</code>) as the first ISBN lookup source. It is free, open and already includes YKL <a class="cite" href="#src-43">[43]</a><a class="cite" href="#src-49">[49]</a>.</p>
+<h2 id="open-questions">Open questions</h2>
+<ul>
+<li><strong>Which ILS PIKI is moving to, and when?</strong> Ask PIKI or the Tampere city library directly; that's quicker than more desk research.</li>
+<li><strong>Can an association contribute records to Finna or Melinda, or deposit books through PIKI?</strong> Ask finna-posti and PIKI. The answer decides whether exporting to Finland ever happens.</li>
+<li><strong>What licence covers Melinda records as a whole?</strong> Only Fennica is confirmed CC0 <a class="cite" href="#src-45">[45]</a>. Settle this before showing copied records publicly; ask the National Library.</li>
+<li><strong>How do RDA and LC enter Vietnamese names?</strong> This affects recommendation 2's default. Check the LC-PCC policy statements or VIAF.</li>
+<li><strong>What did Update 42 change in field 041, and is there a code for the Vietnamese DDC edition (<code>23/vie</code>)?</strong> Re-read loc.gov bd041 and bd082 when building the export.</li>
+<li><strong>What share of the 828 Melinda records with 978-604 ISBNs are children's books?</strong> This sets realistic copy-cataloguing coverage. Run a short query with a juvenile filter, or test the actual 300 ISBNs.</li>
+<li><strong>Remaining smaller gaps:</strong> Finnish barcode conventions, the current share of Finnish libraries on Koha, the Helmet procurement outcome, FOLIO import formats, whether Koha shows 952$e in the public catalogue, current Koha loan-import tooling, and the Finnish minimal cataloguing level.</li>
+</ul>
+<h2 id="source-appendix">Source appendix</h2>
+<details><summary>Show all 57 sources</summary><table class="sources"><tbody><tr id="src-1"><td><a class="cite" href="#src-1">[1]</a></td><td>Koha items/952 fields, unique barcode, separate status flags</td><td><a href="https://schema.koha-community.org/main/tables/items.html" target="_blank" rel="noopener">Koha community schema</a></td><td>live</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-2"><td><a class="cite" href="#src-2">[2]</a></td><td>Koha holds title-level, priority, found codes</td><td><a href="https://schema.koha-community.org/main/tables/reserves.html" target="_blank" rel="noopener">Koha community schema</a></td><td>live</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-3"><td><a class="cite" href="#src-3">[3]</a></td><td>Koha staged import, formats, embedded items, matching; 952 call number on item</td><td><a href="https://koha-community.org/manual/latest/en/html/cataloging.html" target="_blank" rel="noopener">Koha Manual</a></td><td>2026-11</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-4"><td><a class="cite" href="#src-4">[4]</a></td><td>Koha patron import, anonymisation</td><td><a href="https://koha-community.org/manual/latest/en/html/tools.html" target="_blank" rel="noopener">Koha Manual, tools</a></td><td>2026-11</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-5"><td><a class="cite" href="#src-5">[5]</a></td><td>Evergreen copy barcode NOT NULL unique, bib→call number→copy</td><td><a href="https://raw.githubusercontent.com/evergreen-library-system/Evergreen/main/Open-ILS/src/sql/Pg/040.schema.asset.sql" target="_blank" rel="noopener">Evergreen source</a></td><td>live</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-6"><td><a class="cite" href="#src-6">[6]</a></td><td>Evergreen copy statuses</td><td><a href="https://raw.githubusercontent.com/evergreen-library-system/Evergreen/main/Open-ILS/src/sql/Pg/950.data.seed-values.sql" target="_blank" rel="noopener">Evergreen source</a></td><td>live</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-7"><td><a class="cite" href="#src-7">[7]</a></td><td>Evergreen Vandelay import, holdings profiles, generated barcodes, formats</td><td><a href="https://docs.evergreen-ils.org/docs/latest/cataloging/batch_importing_MARC.html" target="_blank" rel="noopener">Evergreen docs</a></td><td>unknown</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-8"><td><a class="cite" href="#src-8">[8]</a></td><td>FOLIO item schema, barcode optional, accession number/HRID</td><td><a href="https://github.com/folio-org/mod-inventory-storage/blob/master/ramls/schemas/item-storage/item.json" target="_blank" rel="noopener">FOLIO mod-inventory-storage</a></td><td>2026-10</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-9"><td><a class="cite" href="#src-9">[9]</a></td><td>FOLIO item status enum</td><td><a href="https://github.com/folio-org/mod-inventory-storage/blob/master/ramls/schemas/item-storage/itemStatus.json" target="_blank" rel="noopener">FOLIO mod-inventory-storage</a></td><td>2026-10</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-10"><td><a class="cite" href="#src-10">[10]</a></td><td>FOLIO data import matching</td><td><a href="https://folio-org.atlassian.net/wiki/spaces/FOLIOtips/pages/5672633/Data+Import+Functionality+Implementation+Table" target="_blank" rel="noopener">FOLIO wiki</a></td><td>unknown</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-11"><td><a class="cite" href="#src-11">[11]</a></td><td>Sierra→FOLIO post-mortem: barcodes, locations, 035 prefix</td><td><a href="https://serials.atla.com/tcb/article/view/3294/4493" target="_blank" rel="noopener">Atla Theology Cataloging Bulletin</a></td><td>2023-10</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-12"><td><a class="cite" href="#src-12">[12]</a></td><td>Migration item fields and pitfalls</td><td><a href="https://kohasupport.com/knowledge-base/bibliographic-vs-item-records-koha-migration/" target="_blank" rel="noopener">kohasupport.com</a></td><td>2026-05</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-13"><td><a class="cite" href="#src-13">[13]</a></td><td>MARC 541 privacy indicator</td><td><a href="https://www.loc.gov/marc/bibliographic/bd541.html" target="_blank" rel="noopener">Library of Congress</a></td><td>live</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-14"><td><a class="cite" href="#src-14">[14]</a></td><td>Library barcode symbologies and layout</td><td><a href="https://sirsi.sitehost.iu.edu/Helps/Symphony/Workflows/English/Content/Topics/09-ConfigPolicies/FAQs/FAQ_Barcode_Specs.htm" target="_blank" rel="noopener">SirsiDynix help (IU)</a></td><td>unknown</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-15"><td><a class="cite" href="#src-15">[15]</a></td><td>Koha autoBarcode increments highest barcode</td><td><a href="https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=29584" target="_blank" rel="noopener">Koha Bugzilla</a></td><td>2021-12</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-16"><td><a class="cite" href="#src-16">[16]</a></td><td>Loan migration keyed on barcode and cardnumber</td><td><a href="https://lists.koha-community.org/pipermail/koha-devel/2011-August/036048.html" target="_blank" rel="noopener">koha-devel list</a></td><td>2011-08</td><td>2026-11-03</td><td><span class="b b-low">low</span></td></tr><tr id="src-17"><td><a class="cite" href="#src-17">[17]</a></td><td>FOLIO duplicate-barcode clean-up</td><td><a href="https://info.library.okstate.edu/foliocataloging/duplicate_barcodes" target="_blank" rel="noopener">Oklahoma State University Library</a></td><td>2026-09</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-18"><td><a class="cite" href="#src-18">[18]</a></td><td>MARC 21 Bibliographic Update 42</td><td><a href="https://www.loc.gov/marc/bibliographic/" target="_blank" rel="noopener">Library of Congress</a></td><td>2026-05</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-19"><td><a class="cite" href="#src-19">[19]</a></td><td>OCLC validation installed Update 42</td><td><a href="https://listserver.lib.byu.edu/pipermail/dcrm-l/2026-July/007538.html" target="_blank" rel="noopener">DCRM-L list</a></td><td>2026-07</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-20"><td><a class="cite" href="#src-20">[20]</a></td><td>Leader codes</td><td><a href="https://www.loc.gov/marc/bibliographic/bdleader.html" target="_blank" rel="noopener">Library of Congress</a></td><td>2016-11</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-21"><td><a class="cite" href="#src-21">[21]</a></td><td>MARC Unicode: Leader/09, combining-mark order</td><td><a href="https://www.loc.gov/marc/specifications/speccharucs.html" target="_blank" rel="noopener">Library of Congress</a></td><td>unknown</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-22"><td><a class="cite" href="#src-22">[22]</a></td><td>Koha stores NFC, exports NFD</td><td><a href="https://lists.koha-community.org/archives/list/koha-bugs@lists.koha-community.org/thread/5RHEQ5R3FLCPQXP5NXFWOSCRAHWEAYQF/" target="_blank" rel="noopener">Koha bugs list, bug 42157</a></td><td>2026-03</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-23"><td><a class="cite" href="#src-23">[23]</a></td><td>Holdings 852 subfields</td><td><a href="https://www.loc.gov/marc/holdings/hd852.html" target="_blank" rel="noopener">Library of Congress</a></td><td>2021-06</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-25"><td><a class="cite" href="#src-25">[25]</a></td><td>Finnish 084 YKL practice, indicator 9</td><td><a href="https://marc21.kansalliskirjasto.fi/bib/05X-08X.htm" target="_blank" rel="noopener">National Library of Finland</a></td><td>2026-05</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-26"><td><a class="cite" href="#src-26">[26]</a></td><td>Finnish 6XX YSO with URI</td><td><a href="https://marc21.kansalliskirjasto.fi/bib/6XX.htm" target="_blank" rel="noopener">National Library of Finland</a></td><td>2025-09</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-27"><td><a class="cite" href="#src-27">[27]</a></td><td>`ykl` LC classification source code</td><td><a href="https://www.loc.gov/standards/sourcelist/classification.html" target="_blank" rel="noopener">Library of Congress</a></td><td>2026-09</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-28"><td><a class="cite" href="#src-28">[28]</a></td><td>082 indicators and $2 edition form</td><td><a href="https://www.loc.gov/marc/bibliographic/bd082.html" target="_blank" rel="noopener">Library of Congress</a></td><td>2024-06</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-29"><td><a class="cite" href="#src-29">[29]</a></td><td>YKL on Finto, CC0</td><td><a href="https://finto.fi/ykl/fi/" target="_blank" rel="noopener">Finto / National Library of Finland</a></td><td>2026-01</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-30"><td><a class="cite" href="#src-30">[30]</a></td><td>DDC numbers displayable without captions</td><td><a href="https://www.oclc.org/content/dam/legal/schedules/en_us/Schedule-08-WebDewey-EN-US.pdf" target="_blank" rel="noopener">OCLC WebDewey Schedule 8</a></td><td>unknown</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-31"><td><a class="cite" href="#src-31">[31]</a></td><td>No licence needed for DDC numbers</td><td><a href="https://www.dnb.de/EN/Professionell/DDC-Deutsch/_content/ddcDeutschDDCkostenfrei_akk.html" target="_blank" rel="noopener">Deutsche Nationalbibliothek</a></td><td>unknown</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-32"><td><a class="cite" href="#src-32">[32]</a></td><td>Vietnamese DDC 23, most libraries use it</td><td><a href="https://nlv.gov.vn/ef/summary-conference-on-application-of-dewey-decimal-classification-vietnamese-edition-23-in-viet-nams-libraries-2014-2019.html" target="_blank" rel="noopener">National Library of Vietnam</a></td><td>2019-11</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-33"><td><a class="cite" href="#src-33">[33]</a></td><td>MARC code `vie`</td><td><a href="https://www.loc.gov/marc/languages/language_code.html" target="_blank" rel="noopener">Library of Congress</a></td><td>2026-01</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-34"><td><a class="cite" href="#src-34">[34]</a></td><td>X00 name indicators</td><td><a href="https://www.loc.gov/marc/bibliographic/bdx00.html" target="_blank" rel="noopener">Library of Congress</a></td><td>unknown</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-35"><td><a class="cite" href="#src-35">[35]</a></td><td>Finnish shelf mark (pääsana) practice; 84.2 children&#x27;s fiction</td><td><a href="https://www.hyvinkaa.fi/globalassets/kulttuuri-ja-vapaa-aika/kirjasto/pdf-tiedostot/hyllytys--ja-aakkostusohjeet.pdf" target="_blank" rel="noopener">Hyvinkää city library</a></td><td>2015-03</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-36"><td><a class="cite" href="#src-36">[36]</a></td><td>Update 42 changes (041; Holdings unchanged)</td><td><a href="https://loc.gov/marc/marc21_update42_online.html" target="_blank" rel="noopener">Library of Congress</a></td><td>2026-05</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-37"><td><a class="cite" href="#src-37">[37]</a></td><td>MARC-8 conversion yields decomposed text</td><td><a href="https://lists.koha-community.org/pipermail/koha-devel/2008-April/030175.html" target="_blank" rel="noopener">koha-devel list</a></td><td>2008-04</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-38"><td><a class="cite" href="#src-38">[38]</a></td><td>Tampere Aurora agreement</td><td><a href="https://tampere.cloudnc.fi/fi-FI/Viranhaltijat/Tietohallintojohtaja/Axiell_Aurora_kirjastojarjestelmaa_koske(98681)" target="_blank" rel="noopener">City of Tampere</a></td><td>2019</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-39"><td><a class="cite" href="#src-39">[39]</a></td><td>Piki-kirjastot/Aurora</td><td><a href="https://paatokset.hel.fi/fi/asia/hel-2017-007484" target="_blank" rel="noopener">City of Helsinki</a></td><td>2017</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-40"><td><a class="cite" href="#src-40">[40]</a></td><td>Aurora support ending</td><td><a href="https://www.soisalonseutu.fi/paikalliset/9849769" target="_blank" rel="noopener">Soisalon Seutu</a></td><td>2026-10</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-41"><td><a class="cite" href="#src-41">[41]</a></td><td>New PIKI agreement, joint system procurement</td><td><a href="https://www.tampere.fi/en/current/2026/05/22/cooperation-between-tampere-and-other-piki-library-consortia" target="_blank" rel="noopener">City of Tampere</a></td><td>2026-05</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-42"><td><a class="cite" href="#src-42">[42]</a></td><td>Koha-Suomi Oy ownership</td><td><a href="https://koha-suomi.fi/" target="_blank" rel="noopener">Koha-Suomi Oy</a></td><td>2026</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-43"><td><a class="cite" href="#src-43">[43]</a></td><td>Melinda open SRU/OAI-PMH/Z39.50</td><td><a href="https://www.kiwi.fi/spaces/melinda/pages/166101210/Hakurajapinnat+Search+harvesting+APIs" target="_blank" rel="noopener">Kiwi / National Library of Finland</a></td><td>2025-05</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-44"><td><a class="cite" href="#src-44">[44]</a></td><td>Copy-cataloguing interfaces free</td><td><a href="https://www.kansalliskirjasto.fi/en/news/national-library-finland-makes-its-copy-cataloguing-interfaces-freely-available" target="_blank" rel="noopener">National Library of Finland</a></td><td>unknown</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-45"><td><a class="cite" href="#src-45">[45]</a></td><td>Fennica CC0</td><td><a href="https://www.kiwi.fi/spaces/Datacatalog/pages/86972056/Fennica" target="_blank" rel="noopener">Kiwi data catalogue</a></td><td>2026-07</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-46"><td><a class="cite" href="#src-46">[46]</a></td><td>Joining Melinda: free, requirements</td><td><a href="https://www.kiwi.fi/display/melinda/Yleisten+kirjastojen+liittyminen+Melindaan" target="_blank" rel="noopener">Kiwi / Melinda</a></td><td>2024-07</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-47"><td><a class="cite" href="#src-47">[47]</a></td><td>Koha-Suomi ↔ Melinda via OAI-PMH</td><td><a href="https://www.kiwi.fi/download/attachments/50168589/Liite%206%20Melinda%20rajapinnat%20Koha-Suomi-TaTi_v1.0.pdf" target="_blank" rel="noopener">Kiwi attachment</a></td><td>2020-01</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-48"><td><a class="cite" href="#src-48">[48]</a></td><td>Helmet Sierra and procurement</td><td><a href="https://paatokset.hel.fi/fi/asia/hel-2025-016752" target="_blank" rel="noopener">City of Helsinki</a></td><td>2025</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr><tr id="src-49"><td><a class="cite" href="#src-49">[49]</a></td><td>Live: 828 Melinda records with 978-604</td><td><a href="https://sru.api.melinda.kansalliskirjasto.fi/bib?version=1.1&amp;operation=searchRetrieve&amp;maximumRecords=3&amp;query=bath.isbn%3D978604%2A" target="_blank" rel="noopener">Melinda SRU</a></td><td>live</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-50"><td><a class="cite" href="#src-50">[50]</a></td><td>Live: Vietnamese children&#x27;s records with ykl, vie; NFD</td><td><a href="https://sru.api.melinda.kansalliskirjasto.fi/bib?version=1.1&amp;operation=searchRetrieve&amp;maximumRecords=3&amp;query=dc.creator%3D%22Nguy%E1%BB%85n%20Nh%E1%BA%ADt%20%C3%81nh%22" target="_blank" rel="noopener">Melinda SRU</a></td><td>live</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-51"><td><a class="cite" href="#src-51">[51]</a></td><td>Live: Finna vie records, PIKI 335</td><td><a href="https://api.finna.fi/v1/search?lookfor=&amp;filter%5B%5D=language%3Avie&amp;limit=0&amp;facet%5B%5D=building" target="_blank" rel="noopener">Finna API</a></td><td>live</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-52"><td><a class="cite" href="#src-52">[52]</a></td><td>Finna membership terms and requirements</td><td><a href="https://www.kiwi.fi/spaces/Finna/pages/442433934/Ketk%C3%A4+voivat+liitty%C3%A4+mukaan" target="_blank" rel="noopener">Kiwi / Finna</a></td><td>2025-10</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-53"><td><a class="cite" href="#src-53">[53]</a></td><td>Finna OAI-PMH, marc21 prefix</td><td><a href="https://www.kiwi.fi/display/Finna/OAI-PMH+-haravointirajapinta+Finnan+indeksiin" target="_blank" rel="noopener">Kiwi / Finna</a></td><td>2025-04</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-54"><td><a class="cite" href="#src-54">[54]</a></td><td>YSO CC BY 4.0, languages, REST API</td><td><a href="https://finto.fi/yso/en/" target="_blank" rel="noopener">Finto</a></td><td>2026-11</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-56"><td><a class="cite" href="#src-56">[56]</a></td><td>NatLibFi serializers formats, activity</td><td><a href="https://github.com/NatLibFi/marc-record-serializers" target="_blank" rel="noopener">GitHub NatLibFi</a></td><td>2026-09</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-57"><td><a class="cite" href="#src-57">[57]</a></td><td>@natlibfi/marc-record typed, MIT, releases</td><td><a href="https://registry.npmjs.org/@natlibfi%2fmarc-record" target="_blank" rel="noopener">npm registry</a></td><td>2026-08</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-58"><td><a class="cite" href="#src-58">[58]</a></td><td>marcjs formats, UTF-8 only, activity</td><td><a href="https://github.com/fredericd/marcjs" target="_blank" rel="noopener">GitHub fredericd/marcjs</a></td><td>2026-09</td><td>2026-11-03</td><td><span class="b b-high">high</span></td></tr><tr id="src-59"><td><a class="cite" href="#src-59">[59]</a></td><td>Vietnam MARC 21 standard TCVN 7539:2005</td><td><a href="https://thuvienphapluat.vn/TCVN/Linh-vuc-khac/TCVN-7539-2005-Thong-tin-va-tu-lieu-Kho-mau-MARC-21-cho-du-lieu-thu-muc-907220.aspx" target="_blank" rel="noopener">Thư viện Pháp luật</a></td><td>2005</td><td>2026-11-03</td><td><span class="b b-medium">medium</span></td></tr></tbody></table></details>
+<h2 id="staleness-map">Staleness map</h2>
+<p>Computed by <code>recon_kit.py staleness</code>. Freshness windows in months: version 1, tooling/ecosystem/access/live test 6, standard/licence 12, pattern/practice 24.</p>
+<table>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Class</th>
+<th>Pub</th>
+<th>Re-check by</th>
+<th>Stale now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="cite" href="#src-22">[22]</a> Koha NFC/NFD export bug</td>
+<td>version</td>
+<td>2026-03</td>
+<td>2026-04-01</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-18">[18]</a><a class="cite" href="#src-36">[36]</a> MARC Update 42; 041 change</td>
+<td>version</td>
+<td>2026-05</td>
+<td>2026-06-01</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-3">[3]</a><a class="cite" href="#src-5">[5]</a> Koha import / Evergreen barcode rules</td>
+<td>version</td>
+<td>2026-11</td>
+<td>2026-12-01</td>
+<td>no</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-41">[41]</a> PIKI joint system procurement</td>
+<td>ecosystem</td>
+<td>2026-05</td>
+<td>2026-11-01</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-38">[38]</a> PIKI on Aurora</td>
+<td>ecosystem</td>
+<td>2019</td>
+<td>2019-07-01</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-40">[40]</a> Aurora end of support</td>
+<td>ecosystem</td>
+<td>2026-10</td>
+<td>2027-04-01</td>
+<td>no</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-43">[43]</a> Melinda interfaces open</td>
+<td>access</td>
+<td>2025-05</td>
+<td>2025-11-01</td>
+<td>yes by date; live test on 2026-11-03 shows they still work</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-52">[52]</a> Finna membership terms</td>
+<td>access</td>
+<td>2025-10</td>
+<td>2026-04-01</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-56">[56]</a> NatLibFi serializers</td>
+<td>tooling</td>
+<td>2026-09</td>
+<td>2027-03-01</td>
+<td>no</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-49">[49]</a><a class="cite" href="#src-50">[50]</a><a class="cite" href="#src-51">[51]</a> Live Melinda/Finna counts</td>
+<td>live-test</td>
+<td>2026-11</td>
+<td>2027-05-01</td>
+<td>no</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-27">[27]</a><a class="cite" href="#src-33">[33]</a> <code>ykl</code>, <code>vie</code> codes</td>
+<td>standard</td>
+<td>2026</td>
+<td>2027-01 / 2027-09</td>
+<td>no</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-29">[29]</a><a class="cite" href="#src-30">[30]</a> YKL CC0; DDC numbers free</td>
+<td>licence</td>
+<td>2026</td>
+<td>2027-01 / 2027-11</td>
+<td>no</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-32">[32]</a> Vietnam uses DDC 23</td>
+<td>practice</td>
+<td>2019-11</td>
+<td>2021-11-01</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-11">[11]</a> FOLIO post-mortem</td>
+<td>pattern</td>
+<td>2023-10</td>
+<td>2025-10-01</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><a class="cite" href="#src-2">[2]</a> Koha title-level holds</td>
+<td>pattern</td>
+<td>2026-11</td>
+<td>2028-11-01</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>Nine claims are already past their window. The claim with the earliest re-check date (2019-07-01), "PIKI is on Aurora", is the one to refresh first: ask PIKI which system replaces Aurora. The Koha NFD export bug and the 041 change should be re-read when MARC export is actually built.</p></main></div></body></html>

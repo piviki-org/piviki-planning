@@ -1,0 +1,158 @@
+# epic-librarian-catalogue: planned stories in build order (draft)
+
+[[entry]]
+id = 1
+type = "story"
+title = "A librarian signs in at admin.piviki.fi in production"
+description = "Tracer bullet: piviki-core (Payload, Postgres) and piviki-infra (Compose, cloudflared, Caddy) run on the VPS, deployed by CI from GHCR through a limited deploy user with pinned Actions, migrations run before the new core starts, and each service reads only its own root-owned secrets; Dependabot and secret scanning are on in every repository; the Cloudflare zone is imported into OpenTofu with a no-change plan and state in the private R2 bucket created in the EU jurisdiction; the librarians collection has AD-7's password length, about 8-hour sessions and secure, SameSite=Lax, host-only cookies with tokens removed from bodies; collections are built from a deny-by-default helper; GraphQL is disabled, jobs.access.run returns false and first-register is blocked at Caddy and in a hook; the first librarian is seeded over SSH, and only then are the admin and api records added, with Cloudflare Access on admin and api.piviki.fi serving only /api/v1 with a health route."
+verify = "A founder passes Cloudflare Access, signs in at admin.piviki.fi on an image CI deployed from a commit; api.piviki.fi/api/v1/health answers while any other api path returns 404; the deploy check shows first-register returning 404; an outside scan of the VPS shows only SSH; piviki.fi still shows the coming-soon page."
+covers = []
+after = []
+hitl = true # order the VPS, create the scoped Cloudflare API token and the state bucket, seed the first librarian, run the outside scan
+risk = "high"
+references = ["_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md#assumptions-to-prove"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Tenant, policy values and patron records are in place"
+description = "Adds the tenant reference with its shared access filter to every library-owned record; the tenant-policy record seeded by migration with placeholder loan period, maximum books, renewal rules, retention period, inactivity window and uncollected window, plus time zone, signupOpen and currentPolicyVersion, read only through modules/circulation/policy; the policy:set command that validates and records who, when and what; chat group links as server configuration values; and the patrons collection with its full AD-14 fields, the phone number readable only by librarians, no public route, and admin and generated deletes denied."
+verify = "A developer runs policy:set in the production core container to change the loan period and sees the new value and its audit entry with no deploy; CI shows the tests passing that a client-sent tenant is ignored, a patron session is refused on every collection, and deleting a patron through admin is refused."
+covers = ["R3", "R5"]
+after = [1]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 3
+type = "story"
+title = "A librarian adds and edits a book and its copies"
+description = "Adds titles in the AD-20 shape, drafts by default, stored in NFC with the AD-10 normalised search column, and copies whose state core sets to available, with core-assigned PVK barcodes from one sequence, in English librarian screens whose text comes from core message files."
+verify = "On production a librarian adds a title with no ISBN, edits it, adds two copies and sees consecutive PVK barcodes; a search without diacritics finds a title typed with them; CI shows the NFC and refused-client-barcode tests passing."
+covers = ["R1", "R4", "R5"]
+after = [2]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Duplicate titles are refused unless overridden"
+description = "Adds catalogue/matchKey and the serialised duplicate check on title create and on publishing a draft, refusing with 409 duplicate_title and the oldest match, and shows the match with the allowDuplicate override in the librarian tool."
+verify = "A librarian adding a title that matches an existing one by ISBN, or by normalised title, first author and series number, sees the match and can override it; CI shows two concurrent matching creates leaving exactly one title."
+covers = ["R1"]
+after = [3]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Book images are stored safely in public storage"
+description = "Adds front cover, back cover and publishing information page images to titles, stored through the S3 adapter in a public R2 bucket created by OpenTofu with unguessable names and no listing, with every original re-encoded so no metadata survives; proves the spine's assumption that storage-s3 uploads to R2 with the current AWS SDK."
+verify = "A librarian attaches a GPS-tagged photo to a title on production; the stored file opens by its URL, carries no EXIF, and the bucket refuses listing."
+covers = ["R1"]
+after = [4] # shares the titles collection with the duplicate check
+hitl = false
+risk = "medium"
+references = ["_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md#assumptions-to-prove"]
+notes = ["If the upload fails on checksums, set checksum options to WHEN_REQUIRED (spine Assumptions to Prove)."]
+
+[[entry]]
+id = 6
+type = "story"
+title = "Review view publishes drafts, and the import script can sign in"
+description = "Adds the review view that lists drafts, flags draft titles with no copy and images attached to no title, merges drafts moving their copies with barcodes unchanged, and publishes through the duplicate check; adds API keys on librarian accounts and the Cloudflare Access service token that epic-initial-load's import script uses."
+verify = "In the production review view a librarian sees a draft with no copy and an image with no title flagged, merges two draft titles and sees the copies move with their barcodes, and publishes the result; an API key with the service token creates a draft title through admin.piviki.fi from outside."
+covers = ["R6"]
+after = [5]
+hitl = true # a founder issues the service token and stores it in the password manager
+risk = "high"
+
+[[entry]]
+id = 7
+type = "story"
+title = "Nightly encrypted backups, with a restore tested"
+description = "Adds the backup container with its own read-only role and R2 token, sending a nightly age-encrypted pg_dump to the dump prefix of the private EU bucket, with a 30-day lifecycle and 7-day lock scoped to that prefix so OpenTofu state and erasures are untouched, and a missed-dump heartbeat alert; writes the restore runbook, including re-deleting erasure ids and advancing the barcode sequence by a margin before core starts; a restore is tested before epic-initial-load's bulk import, and the test records from stories 3 to 6 are removed so the import starts from a clean catalogue."
+verify = "A founder restores last night's dump with the offline key into a fresh Postgres and sees the data intact; the production catalogue holds no test records; skipping a dump raises the heartbeat alert; the OpenTofu state survives the lifecycle rule."
+covers = []
+after = [6] # shares piviki-infra Compose and OpenTofu files; runs before the first data that cannot be recreated
+hitl = true # founders generate and hold the age key offline and run the restore drill
+risk = "medium"
+
+[[entry]]
+id = 8
+type = "story"
+title = "Production is hardened before real data"
+description = "Runs core as non-root on a read-only filesystem with no Docker socket and a non-superuser Postgres role, turns on automatic OS security updates and a monthly image rebuild, adds the Caddy Origin check, the Cloudflare rate-limit rule, core limiter and lockout on librarian login, the ids-only logging with about 30-day rotation and the about 90-day ids-only log of librarian logins and generated writes, and MFA on every provider console, before epic-initial-load brings real data."
+verify = "Repeated failed librarian logins on production are limited and then locked out; an admin request with a foreign Origin is refused; a log sample holds ids and no names, emails or tokens; the core container runs as non-root on a read-only filesystem."
+covers = []
+after = [7] # shares piviki-infra Compose and Caddy files
+hitl = true # founders turn on MFA on every provider console
+risk = "medium"
+
+[[entry]]
+id = 9
+type = "story"
+title = "Mail sends from the library's domain"
+description = "A founder picks the transactional email provider against the spine's criteria and signs its processing agreement; core sends through the Nodemailer SMTP adapter, with SPF, DKIM and DMARC records in OpenTofu, tracking off, the reset limiter and a per-address send limit; finishes proving that reset links work across the two hostnames; epic-reservation-loop later adds the outbox on top of it."
+verify = "A librarian requests a password reset on production, receives it from an @piviki.fi address with SPF, DKIM and DMARC passing and no tracking links, and the link opens on admin.piviki.fi through Access and sets the password; repeated resets for one address are limited."
+covers = []
+after = [8] # shares piviki-infra OpenTofu files and the limiter
+hitl = true # a founder chooses the provider, signs the agreement and verifies the domain
+risk = "low"
+
+[[entry]]
+id = 10
+type = "story"
+title = "Donated copies are recorded"
+description = "Adds the donations collection with copy, optional donor field and date, lets a librarian record a copy as donated with no donor, and refuses deleting a copy or title that has a donation; donor linking is epic-patron-site's."
+verify = "A librarian records a copy as donated with a date on production, and deleting that copy is refused; CI shows a patron session refused on donations."
+covers = ["R2"]
+after = [9] # shares the copies hooks with merging and the Payload config with mail
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 11
+type = "story"
+title = "A librarian finds a copy by barcode"
+description = "Adds one barcode field, taking typing or a USB scanner, on every librarian screen that acts on a copy, opening that copy."
+verify = "A librarian scans or types a PVK barcode on production and lands on that copy; an unknown barcode says so."
+covers = ["R7"]
+after = [10] # shares the copy screens
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 12
+type = "story"
+title = "Labels print on A4 sticker sheets"
+description = "Adds the label view that prints Code 128 labels with barcode, number and title for copies of published titles on the chosen A4 sheet of 20 to 24 labels, starting at any position, and records which copies are labelled."
+verify = "A librarian prints labels for three published copies starting at position 5 of a partly used sheet, the printed barcodes scan back to those copies, and they show as labelled."
+covers = ["R8"]
+after = [11] # shares the copy screens
+hitl = true # a founder names the sheet product and test-prints
+risk = "medium"
+
+[[entry]]
+id = 13
+type = "story"
+title = "Camera scanning fills the barcode field"
+description = "Adds a camera button to the barcode field that reads a Code 128 barcode with a browser barcode library on a phone or webcam and fills the field as a USB scanner would; cuttable if time runs short."
+verify = "A librarian on a phone opens a copy screen on production, scans a printed label with the camera and lands on that copy."
+covers = ["R7"]
+after = [12] # needs printed labels to scan
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 14
+type = "story"
+title = "Refactor sweep"
+description = "Cleanup only, scoped at its start from the plans and review findings the epic deferred."
+verify = "The deferred findings listed at its start are closed or recorded, and every check of the epic still passes in production."
+covers = []
+after = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+hitl = false
+risk = "low"

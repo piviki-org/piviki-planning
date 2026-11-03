@@ -8,8 +8,8 @@ covers = ["R11", "R17", "R20", "R22", "R25"]
 [[epic]]
 id = 2
 slug = "epic-initial-load"
-title = "The 300 books are imported"
-description = "The 300 books are in the live catalogue, created from scans by a script and reviewed by a librarian before bulk import."
+title = "The initial collection is imported"
+description = "The initial collection of about 300 books is in the live catalogue, created from scans by a script and reviewed by a librarian before bulk import."
 covers = ["R13"]
 after = [{ epic = 1, needs = "the catalogue record format and the librarian tool to review in" }]
 
@@ -17,8 +17,8 @@ after = [{ epic = 1, needs = "the catalogue record format and the librarian tool
 id = 3
 slug = "epic-patron-site"
 title = "Parents find books and sign up"
-description = "On the deployed site, not yet at piviki.fi, anyone browses and searches in Vietnamese or English, and an adult signs up and is invited to the chat group."
-covers = ["R1", "R2", "R3", "R16"]
+description = "On the deployed site, not yet at piviki.fi, anyone browses and searches in Vietnamese or English, and an adult signs up and is invited to the chat group, and a librarian can link a consenting patron as a copy's donor."
+covers = ["R1", "R2", "R3", "R16", "R17"]
 after = [{ epic = 1, needs = "catalogue records and the tenant model" }]
 
 [[epic]]

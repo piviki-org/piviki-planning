@@ -2,9 +2,9 @@
 type: epic
 title: "Parents find books and sign up"
 parent: initiative-kirjasto-mvp
-covers: [R1, R2, R3, R16]
+covers: [R1, R2, R3, R16, R17]
 sources: []
-companions: []
+companions: [_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md]
 after: []
 refined: false
 risk: medium
@@ -14,7 +14,7 @@ risk: medium
 
 ## Description
 
-On the deployed site, not yet at piviki.fi, anyone browses and searches in Vietnamese or English, and an adult signs up and is invited to the chat group.
+On the deployed site, not yet at piviki.fi, anyone browses and searches in Vietnamese or English, and an adult signs up and is invited to the chat group, and a librarian can link a consenting patron as a copy's donor.
 
 ## Outcome
 
@@ -26,6 +26,7 @@ For parents, the collection can be found online in Vietnamese or English, and an
 - A book page shows availability and its scanned images.
 - An adult signs up with the 18+ tick, usage policy acceptance and a separate optional donor consent box, and sees the chat group invitation.
 - The pickup address appears nowhere on the site.
+- A librarian links a copy to a patron who gave donor consent, and removes the link without deleting the copy or its history.
 - Deployed to production and verified end to end with the epics it builds on.
 
 ## Boundaries
@@ -37,3 +38,4 @@ For parents, the collection can be found online in Vietnamese or English, and an
 ## References
 
 - parent — _bmad-output/initiative-kirjasto-mvp/initiative-kirjasto-mvp.md, section Requirements
+- architecture spine — _bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md, the AD rules this epic builds to

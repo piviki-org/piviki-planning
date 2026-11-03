@@ -1,0 +1,60 @@
+# Digest: provider acceptance of an unregistered volunteer group (r3-1)
+
+Scope: will each provider accept a Finnish community lending library that is not a registered association (no Y-tunnus or VAT ID), sending about 100 transactional emails a month from its own domain, and how risky or slow is approval? Accessed 2026-11-03. Note: the run used about 26 tool calls, over the 25-call cap. The overrun was on Sweego.
+
+## Lettermint (NL)
+- The ToS defines a User as "the natural person or legal entity that enters into an Agreement with Lettermint". It has no B2B-only clause and no company-registration or VAT requirement. Clause 21.5 has consumer-specific terms for "a natural person not acting in the exercise of a profession or business". | https://lettermint.co/terms-of-service.md | Lettermint | published 2025-05-29, updated 2026-04-08 | accessed 2026-11-03 | high | acceptance
+- Sending requires a verified account. Until verified, mail can only go to team members ("Unverified teams can send mail only to team members"). | https://lettermint.co/knowledge-base/account/verified-account-required-to-send-emails-this-is-why.md | Lettermint | 2025-08-27 | accessed 2026-11-03 | high | acceptance
+- The verification form asks for account type (individual or business), website, email types (transactional or broadcast), unsubscribe handling and expected volume. The article mentions no company number, VAT or ID document. It states processing is "Usually within a few hours" (Amsterdam time). It lists no rejection criteria. | same URL | Lettermint | 2025-08-27 | accessed 2026-11-03 | high | acceptance
+- The AUP requires "clear, specific consent". It bans purchased, rented or harvested lists. Sending patterns are monitored, and breaching thresholds can mean suspension or termination. It says nothing about personal projects or new domains. | https://lettermint.co/acceptable-use.md | Lettermint | published 2025-05-29, updated 2026-01-01 | accessed 2026-11-03 | high | acceptance
+- The non-profit discount needs a registered non-profit ("501(c)(3), ANBI or equivalent") plus a registration certificate. The group would not qualify until it registers. This affects only the discount, not access to the service. | https://lettermint.co/promo-codes-and-discounts/non-profits.md | Lettermint | undated | accessed 2026-11-03 | high | acceptance
+
+## Scaleway Transactional Email (FR)
+- At sign-up you pick Corporate, Startup, Consultant/Freelancer or **Personal Project**. Personal Project creates a "Personal" account type. A VAT number is asked for only when converting to Corporate, and that conversion is permanent. | https://github.com/scaleway/docs-content/blob/main/pages/account/concepts/understanding-account.mdx ; .../pages/account/setup-lifecycle/switch-account-to-corporate.mdx | Scaleway | undated | accessed 2026-11-03 | high | acceptance
+- Identity check (KYC): "Depending on your account and usage, Scaleway may ask you to provide an ID document". It uses a government photo ID plus a facial check and must be done within 15 minutes, with manual review through support otherwise. Verifying identity "unlock[s] resource quotas". A company ID is not accepted. A 2021 Jumio case study names Jumio as the vendor. | https://github.com/scaleway/docs-content/blob/main/pages/account/setup-lifecycle/verify-identity.mdx ; https://www.jumio.com/case-study-scaleway/ | Scaleway; Jumio | undated; 2022 | accessed 2026-11-03 | high | acceptance
+- TEM default quota is 10,000 emails a month. "New users may face stricter initial limits". Raising quotas needs a validated payment method and identity, and the Support team validates it. | https://github.com/scaleway/docs-content/blob/main/pages/transactional-email/reference-content/tem-capabilities-and-limits.mdx | Scaleway | undated | accessed 2026-11-03 | high | capability
+- Traffic throttling ("progressive emailing") can apply if "your sending domain was recently purchased". This is throttling, not a rejection. | https://github.com/scaleway/docs-content/blob/main/pages/transactional-email/reference-content/protecting-your-domain-reputation.mdx | Scaleway | posted 2023-04-27, validated 2025-05-28 | accessed 2026-11-03 | high | capability
+- The TEM Specific Conditions (v04/2026) contain no clause limiting use to professionals or companies. They let Scaleway throttle the sending rate, require the Client to prove a legal basis for consent on request, and suspend for high bounce rates or blacklisting. | https://www-uploads.scaleway.com/Specific_Conditions_Transactionnal_Email_Services_v042026_3f5487a93c.pdf | Scaleway | 2026-04-29 (PDF metadata) | accessed 2026-11-03 | medium (text extracted from PDF; Scaleway General Terms not checked) | acceptance
+- No independent reports were found of individuals being approved or rejected for TEM. | - | - | - | accessed 2026-11-03 | low | history
+
+## Amazon SES
+- New accounts start in a per-region sandbox: verified recipients only, 200 messages per 24 hours, 1 message per second. The production request asks for mail type (Transactional or Marketing), a website URL, contacts, and an acknowledgement that mail goes only to people who requested it and that bounces and complaints are handled. It asks for no company number. | https://docs.aws.amazon.com/ses/latest/dg/request-production-access.html | AWS | undated | accessed 2026-11-03 | high | acceptance
+- Stated review time: "an initial response to your request within 96 hours", possibly longer if more information is needed. AWS says verifying a domain first helps get approved faster. | same URL | AWS | undated | accessed 2026-11-03 | high | acceptance
+- A re:Post user was denied with the message that the account needed "a pattern of use of other AWS services and a consistent paid billing history" (FRA region), which they saw as circular for an SES-only user. Others in the thread say new accounts were approved automatically. This is a summary from search results; the page itself returned 403 and the date was not seen. | https://repost.aws/questions/QUmX1zW3R_RaikO2vGCGUdpA/ses-production-access-denied-due-to-no-billing-history-circular-limitation-issue | AWS re:Post (user) | undated | accessed 2026-11-03 | medium | history
+- More reports of repeated rejections with vague "Trust and Safety" or security reasons. One forum post says a fabricated use case was approved while a client's legitimate newsletter was rejected. Tip reported: reply on the same support case with the extra detail asked for. Source pages were not opened, only search summaries. | https://repost.aws/questions/QU3X3wZk4rRBK_jHICcmJA6A/aws-support-keeps-rejecting-my-requests-to-get-out-of-the-sandbox-for-ses ; https://forum.mautic.org/t/amazon-ses-declined-me/28462 ; https://yomotherboard.com/question/problems-with-getting-approved-for-aws-ses/ | re:Post / Mautic forum / aggregator | undated | accessed 2026-11-03 | low | history
+- AWS individual (non-business) accounts: not checked this run. It is my unverified belief that AWS allows personal accounts. | - | - | - | - | low | acceptance
+
+## SMTP2GO
+- Sign-up must use an address on your own or a business domain. Addresses from free email providers cannot sign up. An address on the library's own domain should satisfy this, but that is my reading of the rule and was not confirmed by SMTP2GO. | https://www.smtp2go.com/blog/free-smtp-server-offered-smtp2go (search summary; support article 223087947 returned 403) | SMTP2GO | undated | accessed 2026-11-03 | medium | acceptance
+- Free plan: 1,000 emails a month, 200 a day, up to 5 verified domains or senders, 2 team members, no credit card. After 14 days support is ticket-only. | same | SMTP2GO | undated | accessed 2026-11-03 | medium | capability
+- "All new accounts are subject to a review process by our review team". New accounts start with a 1,000-email quota. The review happens faster the sooner that quota is used, and a full review typically needs about 500–700 emails. At about 100 a month, the library might stay in review for months, but the starting quota already covers its volume. | https://support.smtp2go.com/hc/en-gb/articles/223087427-New-Account-Limits-and-the-Review-Process ; https://smtp2go.com/blog/our-most-common-ticket-requests-answered (search summaries) | SMTP2GO | undated | accessed 2026-11-03 | medium | acceptance
+- Anecdotes: a G2 reviewer was suspended without a clear reason after being flagged for unusual activity. A Capterra user was blocked after testing with temporary email addresses. | https://g2.com/products/smtp2go/reviews ; https://www.capterra.com/p/166646/SMTP2GO/reviews/ | G2 / Capterra | undated | accessed 2026-11-03 | low | history
+- No terms of service clause requiring a company or VAT ID was found, but the ToS itself was not read. | - | - | - | - | low | acceptance
+
+## Sweego (FR)
+- The CGV (in force from 27/02/2024) say the service is "ouvert à toute personne physique ou morale" (open to any natural or legal person) and include French consumer-law provisions. | https://www.sweego.io/fr/wp-content/uploads/sites/4/2024/05/conditions_generales_de_vente.pdf | Sweego (Mindbaz) | 2024-02-27 | accessed 2026-11-03 | high | acceptance
+- The same CGV list the data collected at account opening: company name, address, **SIREN/SIRET number**, **intra-community VAT number**, name and email. It is unclear whether these fields are mandatory for a natural person. This is the main open risk for Sweego. | same | Sweego (Mindbaz) | 2024-02-27 | accessed 2026-11-03 | medium | acceptance
+- No sender-review process, review time or KYC documentation was found. | - | - | - | - | low | acceptance
+
+## Verdict
+
+| provider | accepts unregistered group/individual? | review time | acceptance risk |
+|---|---|---|---|
+| Lettermint | pass: ToS covers natural persons, and verification offers an "individual" account type with no company or VAT field | "usually within a few hours" (stated) | low: simple form (website, use type, volume). No stated rejection criteria; the account would be in one volunteer's name |
+| Scaleway TEM | pass: "Personal Project" account type; VAT only for Corporate | no TEM sender review documented; KYC is self-service ID plus face check, otherwise a manual support ticket; quota rises need Support validation | low-med: KYC with a personal ID; stricter initial limits for new users; new-domain throttling (10k/month default far exceeds need) |
+| Amazon SES | unclear: the request form asks for no company number; individual AWS accounts not checked this run | up to 96 h for first response (stated), often longer with follow-ups | med-high: discretionary, opaque denials, including for new accounts without billing history |
+| SMTP2GO | pass (likely): needs an own-domain email, not a business registration; ToS not read | ongoing quota-based review (about 500–700 emails); the 1,000 starting quota covers the need | low-med: anecdotal unexplained suspensions; review may stay pending for a long time at low volume |
+| Sweego | unclear: CGV open to natural persons, but sign-up data lists SIREN/SIRET and VAT | not found | med: sign-up may expect French or EU company identifiers |
+
+## Leads
+- Scaleway General Terms of Services (not read) may hold further consumer or professional conditions.
+- SMTP2GO ToS and support article 223087427 returned 403 to the fetcher and should be read directly (a browser may work).
+- AWS re:Post threads returned 403; dates and AWS staff replies are still unverified.
+- Sweego: test the sign-up form (app.sweego.io) to see whether SIRET/VAT are optional. Sweego docs or FAQ pages on account validation were not found.
+- Lettermint pricing.md (free plan limits) was not read.
+
+## Looked for, not found
+- Independent reports of Lettermint, Scaleway TEM or Sweego approving or rejecting individuals or nonprofits.
+- Any provider stating "no personal projects" or "no nonprofits" as a rejection criterion: none was found in the pages read.
+- Reddit threads specifically: searches returned re:Post and forums instead.
+- A Sweego sender-review or KYC process.

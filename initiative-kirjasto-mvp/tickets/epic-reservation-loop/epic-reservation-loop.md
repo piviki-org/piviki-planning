@@ -4,7 +4,7 @@ title: "A book goes from reservation to return"
 parent: initiative-kirjasto-mvp
 covers: [R4, R5, R7, R8, R14, R15, R18, R24]
 sources: []
-companions: []
+companions: [_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md]
 after: []
 refined: false
 risk: high
@@ -38,3 +38,4 @@ For parents and librarians, a book moves from reservation to return with the sys
 ## References
 
 - parent — _bmad-output/initiative-kirjasto-mvp/initiative-kirjasto-mvp.md, section Requirements
+- architecture spine — _bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md, the AD rules this epic builds to

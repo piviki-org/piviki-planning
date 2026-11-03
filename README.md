@@ -21,9 +21,9 @@ A modular monolith behind a versioned API, with a static headless frontend. Deta
 |---|---|---|
 | `piviki-core` | All state and rules, the librarian tool, jobs, the import script | Payload 3, Next.js, PostgreSQL |
 | `piviki-patron` | Static patron site | Next.js static export, Mantine, Cloudflare |
-| `piviki-infra` | Infrastructure, Compose file, runbooks | OVHcloud VPS, Cloudflare Tunnel/R2, OpenTofu |
+| `piviki-infra` | Infrastructure, Compose file, runbooks | AWS EC2 until the move, then OVHcloud VPS; AWS test environment after; Cloudflare Tunnel/R2, OpenTofu |
 
-Repositories are MIT licensed and live in the `pivikirjasto` GitHub organisation.
+Code repositories are MIT licensed and live in the `piviki-org` GitHub organisation.
 
 ## Workspace layout
 
@@ -54,13 +54,13 @@ The milestones are internal targets. The library opens when the software is read
 | Patron website live at piviki.fi | Mid-December 2026 |
 | First real loan | End of December 2026 |
 
-The work is split into six epics, built in this order. Every epic deploys to production at a non-public address (`beta.piviki.fi`), and sign-up stays closed to real patrons until the launch epic.
+The work is split into six epics, built in this order. Every epic deploys to production at a non-public address (`beta.piviki.fi`), and sign-up stays closed to real patrons until the launch epic. Production runs on AWS EC2 until right after the initial load, then moves to an OVHcloud VPS, and the AWS instance becomes a test environment.
 
 | # | Epic | Delivers | Needs | Risk |
 |---|---|---|---|---|
 | 1 | [Librarians keep the catalogue](initiative-kirjasto-mvp/tickets/epic-librarian-catalogue/epic-librarian-catalogue.md) | Platform baseline (scaffold, CI, deploy, tenant model, i18n), manual entry, donated copies | — | medium |
 | 2 | [The initial collection is imported](initiative-kirjasto-mvp/tickets/epic-initial-load/epic-initial-load.md) | Cover-scan script, review, bulk import | 1 | high |
-| 3 | [Parents find books and sign up](initiative-kirjasto-mvp/tickets/epic-patron-site/epic-patron-site.md) | Bilingual browse and search, sign-up, chat group invite, donor linking | 1 | medium |
+| 3 | [Parents find books and sign up](initiative-kirjasto-mvp/tickets/epic-patron-site/epic-patron-site.md) | Bilingual browse and search, sign-up, chat group invite, donor linking | 1, 2 (the move) | medium |
 | 4 | [A book goes from reservation to return](initiative-kirjasto-mvp/tickets/epic-reservation-loop/epic-reservation-loop.md) | Reserve, queue, pickup loop, ready email, overdue block | 3 | high |
 | 5 | [Loans are renewed and reminded](initiative-kirjasto-mvp/tickets/epic-loan-care/epic-loan-care.md) | Self-renewal, due and overdue emails, ISBN lookup | 4 | low |
 | 6 | [Piviki opens](initiative-kirjasto-mvp/tickets/epic-launch/epic-launch.md) | Privacy notice, usage policy, account deletion, piviki.fi switch, first loan | 4, 5 | high |

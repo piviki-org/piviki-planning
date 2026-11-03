@@ -7,6 +7,7 @@ sources:
   - _bmad-output/initiative-kirjasto-mvp/brief-kirjasto/addendum.md
 companions:
   - _bmad-output/initiative-kirjasto-mvp/brief-kirjasto/addendum.md
+  - _bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md
 after: []
 risk: high
 ---
@@ -15,7 +16,7 @@ risk: high
 
 ## Description
 
-Piviki, a Vietnamese community lending library in Tampere with about 300 children's books and no premises, runs on its own small library system: a catalogue and circulation tool for librarians and a Vietnamese and English website where parents browse, reserve and track loans. When this is done, volunteers no longer track loans by memory, families can find and borrow the collection online, and the first real loan has gone through the system, targeted for the end of December 2026. Inputs are the Piviki brief and its addendum.
+Piviki, a Vietnamese community lending library in Tampere with an initial collection of about 300 children's books and no premises, runs on its own small library system: a catalogue and circulation tool for librarians and a Vietnamese and English website where parents browse, reserve and track loans. When this is done, volunteers no longer track loans by memory, families can find and borrow the collection online, and the first real loan has gone through the system, targeted for the end of December 2026. Inputs are the Piviki brief and its addendum.
 
 ## Outcome
 
@@ -41,8 +42,8 @@ Vietnamese-speaking parents in Tampere can find and borrow Vietnamese children's
 - R16 (brief Scope; Decision 2026-10-31): The pickup address never appears on the public site; patrons receive it through the community chat group they are asked to join at sign-up, where a librarian approves each join.
 - R17 (brief Scope, addendum Donations; Decision 2026-10-31): A librarian can record a copy as donated with a date and an optional donor, the donor link can be removed without deleting the copy or its history, and no donor name is shown to patrons or the public.
 - R18 (addendum Phone number): A librarian can add a patron's phone number at their first pickup.
-- R19 (brief Scope, addendum GDPR, Design notes; Decision 2026-10-31): A patron can read a privacy notice that states the retention period, starting at 3 years, and covers the phone number and possible future donation benefits; they can delete their account unless they still hold a book, and deletion cancels their reservations.
-- R20 (brief Decided later; Decision 2026-10-31): Loan period, maximum books per patron, renewal rules and limits, retention period, uncollected-reservation window and chat group link are set per tenant, and each can be changed without a code change or blocking launch.
+- R19 (brief Scope, addendum GDPR, Design notes; Decision 2026-10-31, 2026-11-03): A patron can read a privacy notice that states the retention period, starting at 3 years, and the inactivity window after which an unused account is deleted, starting at 1 year, and covers the phone number and possible future donation benefits; they can delete their account unless they still hold a book, and deletion cancels their reservations.
+- R20 (brief Decided later; Decision 2026-10-31, 2026-11-03): Loan period, maximum books per patron, renewal rules and limits, retention period, inactivity window, uncollected-reservation window and chat group link are set per tenant, and each can be changed without a code change or blocking launch.
 - R21 (brief Milestones): The patron website replaces the coming-soon page at piviki.fi at launch.
 - R22 (Decision 2026-10-31): Librarians use their tool in English, and translating it later needs translation work only.
 - R23 (Decision 2026-10-31): A librarian can delete a patron's account even while they hold a book; the held copies are marked lost and the patron's reservations are cancelled; when a title's only copy is marked lost, its queue places are cancelled and those patrons are emailed.
@@ -53,7 +54,7 @@ Vietnamese-speaking parents in Tampere can find and borrow Vietnamese children's
 
 - Never cut: reservations, the queue, the pickup loop, check-in, the ready-for-pickup email and the overdue block (brief Milestones).
 - If a milestone slips, cut in this order: ISBN lookup (R12), then self-renewal (R6), then due-date reminders (R9), then the English interface while multi-language support stays (R1); the overdue notice (R10) stays (brief Milestones).
-- Milestones are internal targets: catalogue in use with the 300 books imported by end of November 2026, patron website live by mid-December 2026, first real loan by end of December 2026; the library opens when the software is ready (brief Milestones).
+- Milestones are internal targets: catalogue in use with the initial collection (about 300 books) imported by end of November 2026, patron website live by mid-December 2026, first real loan by end of December 2026; the library opens when the software is ready (brief Milestones; Decision 2026-11-03).
 - A two-person part-time team builds and runs this, which is why the cut order exists (brief Risks).
 - Pickup and drop-off happen at a librarian's home, and pickup times are arranged in the community group chat, outside the system (brief Solution, addendum Pickup and drop-off).
 - Tenancy stays minimal: tenant ownership of records and per-tenant policy values only, and it is not in the cut order because adding it later is the cost it avoids; more languages must remain translation work (Decision 2026-10-31, addendum Multi-library, Multi-language).
@@ -66,7 +67,7 @@ Vietnamese-speaking parents in Tampere can find and borrow Vietnamese children's
 
 ## Done when
 
-- The librarian tool is in use and the 300 books are imported from cover scans after librarian review.
+- The librarian tool is in use and the initial collection (about 300 books) is imported from cover scans after librarian review.
 - The patron website is live at piviki.fi in place of the coming-soon page, with sign-up, browse, reserve, queue and email working in production.
 - A first real loan has gone through Reserve, Ready for pickup, Picked up and Returned, or is on loan with those steps recorded so far.
 - The GDPR question on ethnic-origin data is answered from the Data Protection Ombudsman's guide, and the privacy notice and the usage policy, written by the other founder, are published before launch.
@@ -79,13 +80,14 @@ Vietnamese-speaking parents in Tampere can find and borrow Vietnamese children's
 - Out: firmer overdue consequences such as probation or strikes, automatic expiry of uncollected reservations, fines, and scheduling pickups in the system (brief Scope, Solution; addendum Circulation rules).
 - Touch point: piviki.fi coming-soon page, replaced at launch by the patron website; linked Facebook and Instagram accounts stay outside the system; owner: epic-launch.
 - Touch point: community group chat, WhatsApp and Zalo, used by people for the pickup address, pickup windows, join approval and contact; the system only shares the invitation at sign-up; owner: epic-patron-site.
-- Touch point: transactional email service on the library's own domain; owner: epic-reservation-loop.
+- Touch point: transactional email service on the library's own domain; owner: epic-librarian-catalogue for the adapter and domain, epic-reservation-loop for the outbox and delivery (spine AD-12).
 - Tracer path: a librarian imports a book, a parent signs up, joins the chat group and reserves it, the librarian marks it ready, the parent gets the email, the book is picked up, then reminded about and returned.
 
 ## References
 
 - brief — _bmad-output/initiative-kirjasto-mvp/brief-kirjasto/brief-kirjasto.md, sections The Solution, Scope, Milestones, Success Criteria
 - rules and design notes — _bmad-output/initiative-kirjasto-mvp/brief-kirjasto/addendum.md, sections MVP rules and design notes, Landscape research (GDPR), Parked roadmap
+- architecture spine — _bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md, the AD rules every epic builds to; AD numbers are stable
 
 ## Notes
 
@@ -116,8 +118,13 @@ Vietnamese-speaking parents in Tampere can find and borrow Vietnamese children's
 - Decision: 2026-11-01: Every epic deploys to production at a non-public address; the coming-soon page stays and sign-up stays closed to real patrons until epic-launch.
 - Decision: 2026-11-01: ISBN lookup (R12) moves from epic-librarian-catalogue to epic-loan-care because it is a nice-to-have; manual entry and the cover-scan import carry the catalogue milestone.
 - Decision: 2026-11-01: The catalogue comes first rather than reserve-to-pickup, because reservations need books and accounts and the catalogue is the first milestone.
+- Decision: 2026-11-03: The architecture spine is adopted as a companion of the initiative and every epic.
+- Decision: 2026-11-03: The roughly 300 books are the initial collection, not the whole collection, replacing the brief's "the 300 books" wording, which stays as written.
+- Decision: 2026-11-03: The code is MIT licensed, in the pivikirjasto GitHub organisation (spine AD-18).
+- Decision: 2026-11-03: An account with no activity for 1 year, the per-tenant inactivity window, is deleted without a warning email, never while it holds a book or an open reservation (spine AD-14).
+- Decision: 2026-11-03: R17 is split: epic-librarian-catalogue records donated copies with no donor, and epic-patron-site links and unlinks a consenting patron as donor.
 - Open question: What loan period, maximum books and renewal limits apply at the first real loan, and who confirms them? Stakeholders decide; due dates and reminders need a value by end of December 2026.
 - Open question: Does a Vietnamese community library's patron list count as data revealing ethnic origin under GDPR Art. 9? Founders to check tietosuoja.fi before launch; the answer may change the legal basis and the sign-up wording.
-- Open question: Which licence makes the code "community owned"? Founders decide before the repository is public.
 - Open question: Does Tampere use Helsinki's Multilingual Library deposit collections for Vietnamese? Founders to check; does not block the build.
+- Open question: Who writes the privacy notice, and where are it and the usage policy published? The other founder writes the usage policy; founders decide before sign-up opens.
 - Open question: Stakeholders are still reviewing the mission line and the success targets, which are drafts.

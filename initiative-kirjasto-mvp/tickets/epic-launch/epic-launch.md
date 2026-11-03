@@ -4,7 +4,7 @@ title: "Piviki opens"
 parent: initiative-kirjasto-mvp
 covers: [R19, R21, R23]
 sources: []
-companions: []
+companions: [_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md]
 after: []
 refined: false
 risk: high
@@ -37,3 +37,4 @@ For the community, Piviki opens lawfully at piviki.fi and makes its first real l
 ## References
 
 - parent — _bmad-output/initiative-kirjasto-mvp/initiative-kirjasto-mvp.md, section Requirements
+- architecture spine — _bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md, the AD rules this epic builds to

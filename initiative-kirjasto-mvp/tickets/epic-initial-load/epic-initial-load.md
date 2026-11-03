@@ -1,30 +1,30 @@
 ---
 type: epic
-title: "The 300 books are imported"
+title: "The initial collection is imported"
 parent: initiative-kirjasto-mvp
 covers: [R13]
 sources: []
-companions: []
+companions: [_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md]
 after: []
 refined: false
 risk: high
 ---
 
-# The 300 books are imported
+# The initial collection is imported
 
 ## Description
 
-The 300 books are in the live catalogue, created from scans by a script and reviewed by a librarian before bulk import.
+The initial collection of about 300 books is in the live catalogue, created from scans by a script and reviewed by a librarian before bulk import.
 
 ## Outcome
 
-For librarians, the 300 books reach the catalogue without typing each one, in time for the end-of-November milestone.
+For librarians, the initial collection reaches the catalogue without typing each one, in time for the end-of-November milestone.
 
 ## Done when
 
 - The script produces records from scanned front covers, back covers and publishing information pages, with Vietnamese diacritics intact.
 - A librarian reviews every record before import.
-- The 300 books are in the production catalogue with their images.
+- Every book in the initial collection is in the production catalogue with its images.
 
 ## Boundaries
 
@@ -34,3 +34,4 @@ For librarians, the 300 books reach the catalogue without typing each one, in ti
 ## References
 
 - parent — _bmad-output/initiative-kirjasto-mvp/initiative-kirjasto-mvp.md, section Requirements
+- architecture spine — _bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md, the AD rules this epic builds to

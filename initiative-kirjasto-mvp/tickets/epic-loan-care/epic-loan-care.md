@@ -4,7 +4,7 @@ title: "Loans are renewed and reminded"
 parent: initiative-kirjasto-mvp
 covers: [R6, R9, R10, R12]
 sources: []
-companions: []
+companions: [_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md]
 after: []
 refined: false
 risk: low
@@ -36,3 +36,4 @@ For parents, loans are easier to keep on time: they renew online and are reminde
 ## References
 
 - parent — _bmad-output/initiative-kirjasto-mvp/initiative-kirjasto-mvp.md, section Requirements
+- architecture spine — _bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md, the AD rules this epic builds to

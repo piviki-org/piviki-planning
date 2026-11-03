@@ -33,9 +33,15 @@ For parents, the collection can be found online in Vietnamese or English, and an
 
 - Owns touch point: the chat group invitation; join approval is done by a librarian in the chat.
 - The site stays at a non-public address with sign-up closed to real patrons until epic-launch.
+- Stories that create a patron (sign-up, Google, donor linking) come after epic-initial-load's move story; browse, search and book pages can be built and deployed alongside the initial load. The test environment's own Google OAuth client is set up with sign-up.
+- Extends by migration (spine AD-19): `patrons` and `patronAccountsAllowed` from epic-librarian-catalogue 1.2, and the `donations` donor field from 1.10.
 - Not here: reservations (epic-reservation-loop), policy texts and account deletion (epic-launch).
 
 ## References
 
 - parent — _bmad-output/initiative-kirjasto-mvp/initiative-kirjasto-mvp.md, section Requirements
 - architecture spine — _bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md, the AD rules this epic builds to
+
+## Notes
+
+- Decision: 2026-11-03: Production runs on AWS EC2 on the founders' credits until right after the initial load, then moves to OVH VPS-1 by backup restore; the AWS instance then becomes the test environment (spine AD-17). No real patron's data is ever on AWS (AD-8, AD-18).

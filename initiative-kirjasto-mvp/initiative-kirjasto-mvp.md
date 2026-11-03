@@ -120,9 +120,10 @@ Vietnamese-speaking parents in Tampere can find and borrow Vietnamese children's
 - Decision: 2026-11-01: The catalogue comes first rather than reserve-to-pickup, because reservations need books and accounts and the catalogue is the first milestone.
 - Decision: 2026-11-03: The architecture spine is adopted as a companion of the initiative and every epic.
 - Decision: 2026-11-03: The roughly 300 books are the initial collection, not the whole collection, replacing the brief's "the 300 books" wording, which stays as written.
-- Decision: 2026-11-03: The code is MIT licensed, in the pivikirjasto GitHub organisation (spine AD-18).
+- Decision: 2026-11-03: The code is MIT licensed, in the piviki-org GitHub organisation (spine AD-18).
 - Decision: 2026-11-03: An account with no activity for 1 year, the per-tenant inactivity window, is deleted without a warning email, never while it holds a book or an open reservation (spine AD-14).
 - Decision: 2026-11-03: R17 is split: epic-librarian-catalogue records donated copies with no donor, and epic-patron-site links and unlinks a consenting patron as donor.
+- Decision: 2026-11-03: Production runs on AWS EC2 on the founders' credits until right after the initial load, then moves to OVH VPS-1 by backup restore; the AWS instance then becomes the test environment (spine AD-17). No real patron's data is ever on AWS (AD-8, AD-18).
 - Open question: What loan period, maximum books and renewal limits apply at the first real loan, and who confirms them? Stakeholders decide; due dates and reminders need a value by end of December 2026.
 - Open question: Does a Vietnamese community library's patron list count as data revealing ethnic origin under GDPR Art. 9? Founders to check tietosuoja.fi before launch; the answer may change the legal basis and the sign-up wording.
 - Open question: Does Tampere use Helsinki's Multilingual Library deposit collections for Vietnamese? Founders to check; does not block the build.

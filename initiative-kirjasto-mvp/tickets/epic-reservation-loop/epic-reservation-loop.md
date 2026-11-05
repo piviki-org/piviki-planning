@@ -33,9 +33,14 @@ For parents and librarians, a book moves from reservation to return with the sys
 
 - Owns touch point: email sending on the library's own domain.
 - Never cut (initiative Constraints).
-- Not here: renewal and reminder emails (epic-loan-care), lost copies (epic-launch).
+- Not here: renewal and reminder emails (epic-loan-care), lost copies (epic-launch), the production patron site (epic-soft-open).
 
 ## References
 
 - parent — _bmad-output/initiative-kirjasto-mvp/initiative-kirjasto-mvp.md, section Requirements
 - architecture spine — _bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md, the AD rules this epic builds to
+
+## Notes
+
+- Decision: 2026-11-05: Built on test and deployed to production after epic-soft-open puts the patron site on piviki.fi.
+- Assumption: This epic extends epic-soft-open's patron account deletion to refuse while the patron holds a book and to cancel their reservations, because it creates loans and reservations (initiative R19).

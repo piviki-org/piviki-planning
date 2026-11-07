@@ -97,7 +97,7 @@ Initiative `initiative-kirjasto-mvp.md`:
   (`tickets/epic-librarian-catalogue/tickets/story-a-librarian-signs-in-at-admin-piviki-fi-in-production-plan.md`)
   is re-planned through `bmad-build` after the ticket update; its Implementation Notes record the
   founder steps done so far (Bitwarden, GitHub, AWS account, the `t3.small` instance in
-  `eu-north-1`, public IPv4 `13.53.218.99`, not yet bootstrapped).
+  `eu-north-1`, not yet bootstrapped; its public IPv4 is not tracked).
 - The spine: already updated; if a ticket change seems to need a spine change, raise it rather
   than edit the spine.
 

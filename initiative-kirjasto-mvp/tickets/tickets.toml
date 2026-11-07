@@ -27,7 +27,7 @@ slug = "epic-soft-open"
 title = "Piviki soft opens"
 description = "Production runs on OVH with the initial collection imported and published, and piviki.fi serves the patron website in place of the coming-soon page; sign-up is open to anyone once the privacy notice, usage policy and processor agreements exist, else the site is browse-only with a founder pilot."
 covers = ["R13", "R19", "R21"]
-after = [{ epic = 1, needs = "backups, hardening and mail (1.7, 1.8, 1.9) for the production start" }, { epic = 2, needs = "the import script and a reviewed trial import, for the real import" }, { epic = 3, needs = "the patron site, for the piviki.fi switch and sign-up" }]
+after = [{ epic = 1, needs = "backups, hardening, mail and the host-infrastructure layout (1.7, 1.8, 1.9, 1.15) for the production start" }, { epic = 2, needs = "the import script and a reviewed trial import, for the real import" }, { epic = 3, needs = "the patron site, for the piviki.fi switch and sign-up" }]
 
 [[epic]]
 id = 4

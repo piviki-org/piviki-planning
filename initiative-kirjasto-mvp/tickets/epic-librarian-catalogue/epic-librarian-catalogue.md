@@ -8,6 +8,7 @@ companions: [_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architectu
 after: []
 refined: true
 risk: medium
+status: in-progress
 ---
 
 # Librarians keep the catalogue
@@ -91,4 +92,5 @@ For librarians, a working tool replaces memory for what the library owns, and ev
 - Decision: 2026-11-05: No closing end-to-end suite in this epic, because every story tests itself and is checked on test; a Playwright suite on a local Compose stack is proposed when epic-reservation-loop is planned.
 - Decision: 2026-11-05: After story 6 the work runs in two lanes: infrastructure (7, 8, 9) and the app (10, 11, 12, 13); the refactor sweep waits on both. Who builds the second lane is open.
 - Decision: 2026-11-06: Each environment's OpenTofu state lives in a state-only R2 bucket of its own, reached only by a founder-held R2 token, and OpenTofu uses one Cloudflare API token per environment (spine AD-17; founders decided). Production's backups and erasure records live in its separate private data bucket, created in production's OpenTofu state by story 7, whose lock and expiry rules stay scoped to the dump prefix. Story 1's and story 7's entries were reworded to match; nothing built changes. The shared rate limit rule stays with story 8.
+- Decision: 2026-11-07: Story 15 is added at the founders' request (handoff-sofia-2026-11-06.md, from story 1's first deploy): host infrastructure runs apart from core's deploy, its layout decided through bmad-architecture before building. The epic now has 15 stories and stays whole, for the reason of 2026-11-03. It comes after story 9, last in the infrastructure lane, because it changes the same deploy/ files as 7, 8 and 9; it is listed before the refactor sweep, which also waits on it, and epic-soft-open's production start waits on it so production is set up once, in the final layout. Declined: placing it before story 7 to build backups, hardening and mail in the final layout only once (user, 2026-11-07).
 - Assumption: The seeded placeholder policy values are not used for any real loan before stakeholders set them.

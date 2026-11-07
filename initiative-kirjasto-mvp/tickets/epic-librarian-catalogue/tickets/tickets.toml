@@ -148,12 +148,25 @@ hitl = false
 risk = "low"
 
 [[entry]]
+id = 15
+type = "story"
+title = "Host infrastructure runs apart from core's deploy"
+description = "Decides first, through bmad-architecture (Update), which host services belong to core's release and which to the host (core, its migrations and Caddy, which carries core's path allowlist and first-register block, as the app; cloudflared and Postgres as host infrastructure), where each part's Compose file, env files and env-file manifest live, which project owns the shared edge network and Postgres's network, how infrastructure services are updated and by whom apart from a core deploy, and what AD-21 keeps (one recorded version per host or a core tag and an infra commit, founders controlling root commands on the host, a deploy never fetching, pinned digests, a restore or rebuild naming the whole runtime) and AD-17 keeps (piviki-infra holding only what is shared, the one-connector check, core refusing to start when host names disagree); then builds that layout and its runbooks so a fresh host's first deploy needs no hand-started Tunnel, a core deploy never starts, stops or recreates cloudflared or Postgres, and an update to cloudflared does not cut the session running it; proven on test by rebuilding or migrating the test host with no data kept, before epic-soft-open's production start sets up the OVH host once, in this layout."
+verify = "On a test host set up from the runbooks in the new layout, the first core deploy succeeds with no hand-started cloudflared; a core deploy of a tag that changes deploy/ leaves the cloudflared and Postgres containers running with unchanged container ids; a cloudflared digest update and a Postgres digest update each complete by their documented path, the cloudflared one without dropping the session running it; the one-connector and host-name checks pass; the spine's AD-21, and AD-17 if it changes, is finalized through bmad-architecture; a test-host rebuild from the runbooks reaches a signed-in librarian at test-admin.piviki.fi."
+covers = []
+after = [9] # changes the deploy/ Compose, Caddy and deploy script that 7, 8 and 9 change; last of the infrastructure lane
+hitl = true # founders take the AD-21 decision through bmad-architecture and rebuild or migrate the test host
+risk = "high"
+references = ["_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md#ad-21-cores-host-runtime-has-one-version-per-host", "_bmad-output/initiative-kirjasto-mvp/handoff-sofia-2026-11-06.md"]
+notes = ["Open findings from story 1's first deploy (2026-11-06), closed by this story whatever layout it picks: (1) cloudflared runs in core's Compose stack, which only a deploy starts, so a fresh host's first deploy fails with `websocket: bad handshake` until a founder starts cloudflared alone (runbook-first-deploy §5 carries that stopgap since piviki-infra 6bd5957); (2) `deploy.sh` runs `docker compose up -d --wait --remove-orphans` over every service, so a deploy that changes cloudflared's definition, such as a Dependabot digest bump, recreates it mid-deploy and cuts the deploy's own SSH session, and a Postgres digest bump restarts the database inside an app deploy."]
+
+[[entry]]
 id = 14
 type = "story"
 title = "Refactor sweep"
 description = "Cleanup only, scoped at its start from the plans and review findings the epic deferred."
 verify = "The deferred findings listed at its start are closed or recorded, and every check of the epic still passes on test, and on production once it has started."
 covers = []
-after = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+after = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15]
 hitl = false
 risk = "low"

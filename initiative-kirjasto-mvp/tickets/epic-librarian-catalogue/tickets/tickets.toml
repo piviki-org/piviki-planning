@@ -24,13 +24,26 @@ hitl = false
 risk = "medium"
 
 [[entry]]
+id = 5
+type = "story"
+title = "Images upload safely to public storage"
+description = "Adds the media collection, with its own librarian admin page for uploads, stored through the S3 adapter in a per-environment public R2 bucket created by OpenTofu with unguessable names and no listing, with every original re-encoded so no metadata survives; story 3 links titles to it; proves the spine's assumption that storage-s3 uploads to R2 with the current AWS SDK."
+verify = "A librarian uploads a GPS-tagged photo on test's Media page; the stored file opens by its URL, carries no EXIF, and the bucket refuses listing."
+covers = ["R1"]
+after = [2]
+hitl = true # a founder applies the media bucket in tofu/test with the founder-held tokens
+risk = "medium"
+references = ["_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md#assumptions-to-prove"]
+notes = ["If the upload fails on checksums, set checksum options to WHEN_REQUIRED (spine Assumptions to Prove)."]
+
+[[entry]]
 id = 3
 type = "story"
-title = "A librarian adds and edits a book and its copies"
-description = "Adds titles in the AD-20 shape, drafts by default, stored in NFC with the AD-10 normalised search column, and copies whose state core sets to available, with core-assigned barcodes from one sequence under a per-environment prefix (TST on test, PVK in production), core refusing to start when the prefix disagrees with the host's environment name, and the core barcode lookup function, used by story 11's field, refusing another environment's prefix, in English librarian screens whose text comes from core message files."
-verify = "On test a librarian adds a title with no ISBN, edits it, adds two copies and sees consecutive TST barcodes; a search without diacritics finds a title typed with them; CI shows the NFC and refused-client-barcode tests passing, a PVK-prefix test proving the prefix is not hard-coded, and core refusing to start with a prefix that disagrees with the environment name."
+title = "A librarian adds and edits a book, its copies and its images"
+description = "Adds titles in the AD-20 shape, drafts by default, stored in NFC with the AD-10 normalised search column, and copies whose state core sets to available, with core-assigned barcodes from one sequence under a per-environment prefix (TST on test, PVK in production), core refusing to start when the prefix disagrees with the host's environment name, and the core barcode lookup function, used by story 11's field, refusing another environment's prefix, in English librarian screens whose text comes from core message files; the title form has front cover, back cover and publishing information page image fields linked to the media collection, which a librarian fills by uploading from the form or by choosing an existing image."
+verify = "On test a librarian adds a title with no ISBN, edits it, adds two copies and sees consecutive TST barcodes; uploads a front cover from the title form and sees it on the title; a search without diacritics finds a title typed with them; CI shows the NFC and refused-client-barcode tests passing, a PVK-prefix test proving the prefix is not hard-coded, and core refusing to start with a prefix that disagrees with the environment name."
 covers = ["R1", "R4", "R5"]
-after = [2]
+after = [5] # links titles to the media collection
 hitl = false
 risk = "medium"
 
@@ -46,26 +59,13 @@ hitl = false
 risk = "medium"
 
 [[entry]]
-id = 5
-type = "story"
-title = "Book images are stored safely in public storage"
-description = "Adds front cover, back cover and publishing information page images to titles, stored through the S3 adapter in a per-environment public R2 bucket created by OpenTofu with unguessable names and no listing, with every original re-encoded so no metadata survives; proves the spine's assumption that storage-s3 uploads to R2 with the current AWS SDK."
-verify = "A librarian attaches a GPS-tagged photo to a title on test; the stored file opens by its URL, carries no EXIF, and the bucket refuses listing."
-covers = ["R1"]
-after = [4] # shares the titles collection with the duplicate check
-hitl = false
-risk = "medium"
-references = ["_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md#assumptions-to-prove"]
-notes = ["If the upload fails on checksums, set checksum options to WHEN_REQUIRED (spine Assumptions to Prove)."]
-
-[[entry]]
 id = 6
 type = "story"
 title = "Review view publishes drafts, and the import script can sign in"
 description = "Adds the review view, its text from the core message files, that lists drafts, flags draft titles with no copy and images attached to no title, merges drafts moving their copies with barcodes unchanged, and publishes through the duplicate check; adds API keys on librarian accounts and the Cloudflare Access service-token setup that epic-initial-load's import script uses, with test's key and token; production's pair is created by epic-soft-open's real-import story."
 verify = "In the test review view a librarian sees a draft with no copy and an image with no title flagged, merges two draft titles and sees the copies move with their barcodes, and publishes the result; an API key with test's service token creates a draft title through test-admin.piviki.fi from outside."
 covers = ["R6"]
-after = [5]
+after = [4]
 hitl = true # a founder issues test's service token and stores it in Bitwarden's test collection
 risk = "high"
 

@@ -1,0 +1,13 @@
+- source_plan: `/home/manhlamt/dev/pikivi/_bmad-output/initiative-kirjasto-mvp/tickets/epic-librarian-catalogue/tickets/story-a-librarian-signs-in-at-admin-piviki-fi-in-production-plan.md`
+  summary: Password reset for librarians has no working delivery until the email adapter story, and the console fallback logs the librarian's email address.
+  evidence: Local stack 2026-11-04 — POST /api/librarians/forgot-password returned 200 and core logged "Email attempted without being configured. To: '<email>', Subject: 'Reset Your Password'" (no token). The epic owns the email adapter; decide then whether to disable forgot-password or keep it, and keep addresses out of logs (AD-14).
+- source_plan: `/home/manhlamt/dev/pikivi/_bmad-output/initiative-kirjasto-mvp/tickets/epic-librarian-catalogue/tickets/story-a-librarian-signs-in-at-admin-piviki-fi-in-production-plan.md`
+  summary: The deploy check's Tunnel connector count may read 0 or 2 for a moment right after cloudflared is recreated, failing a healthy deploy (unverified; medium if true).
+  evidence: Settled by watching the connections API during a real cloudflared recreate (an image digest bump) at the first deploys; if it flaps, poll for up to about 60 s in checks.sh and add a "settles to one" case to checks-connector.test.sh.
+- source_plan: `/home/manhlamt/dev/pikivi/_bmad-output/initiative-kirjasto-mvp/tickets/epic-librarian-catalogue/tickets/story-a-librarian-signs-in-at-admin-piviki-fi-in-production-plan.md`
+  summary: AD-17 lists the rate limit rule as a shared resource living only in production's OpenTofu state, but no ticket creates it; story 1.1's shared state holds only the zone, coming-soon records and the One-time PIN login method.
+  evidence: architecture-piviki.md AD-17 "Infrastructure as code"; story 1.1's ticket description names only those three; `tofu/prod` has no `cloudflare_ruleset`. Sofia to place it (likely before the patron site or the production start); the CI static check already forbids a ruleset in test's config.
+
+- source_plan: `_bmad-output/initiative-kirjasto-mvp/plan-1-1-deploy-tree-label.md`
+  summary: Stop non-main workflows from pushing core images to GHCR (e.g. an Actions/GHCR policy or a push-to-main-only rule), so an image's tag and `fi.piviki.deploy-tree` label can only come from main's build.
+  evidence: build.yml's image job is now main-only, but a workflow file on another branch could still grant `packages: write` and push `<main-commit>-<date>` with any label; deploy.yml checks only that the commit is on main and the manifest exists. Pre-existing (the old commit lookup also trusted image content); root control unaffected since deploy/ comes from the checkout. Unverified whether GHCR or org settings already prevent it.

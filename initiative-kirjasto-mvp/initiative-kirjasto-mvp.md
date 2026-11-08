@@ -44,7 +44,7 @@ Vietnamese-speaking parents in Tampere can find and borrow Vietnamese children's
 - R18 (addendum Phone number): A librarian can add a patron's phone number at their first pickup.
 - R19 (brief Scope, addendum GDPR, Design notes; Decision 2026-10-31, 2026-11-03): A patron can read a privacy notice that states the retention period, starting at 3 years, and the inactivity window after which an unused account is deleted, starting at 1 year, and covers the phone number and possible future donation benefits; they can delete their account unless they still hold a book, and deletion cancels their reservations.
 - R20 (brief Decided later; Decision 2026-10-31, 2026-11-03): Loan period, maximum books per patron, renewal rules and limits, retention period, inactivity window, uncollected-reservation window and chat group link are set per tenant, and each can be changed without a code change or blocking launch.
-- R21 (brief Milestones): The patron website replaces the coming-soon page at piviki.fi at launch.
+- R21 (brief Milestones; Decision 2026-11-05): The patron website replaces the coming-soon page at piviki.fi at the soft open.
 - R22 (Decision 2026-10-31): Librarians use their tool in English, and translating it later needs translation work only.
 - R23 (Decision 2026-10-31): A librarian can delete a patron's account even while they hold a book; the held copies are marked lost and the patron's reservations are cancelled; when a title's only copy is marked lost, its queue places are cancelled and those patrons are emailed.
 - R24 (Decision 2026-10-31): A patron can cancel their own reservation or leave a queue, and the book passes to the next patron in line.
@@ -78,7 +78,7 @@ Vietnamese-speaking parents in Tampere can find and borrow Vietnamese children's
 - Out: donation points and perks; a shelf in a partner space; postal delivery (rejected); languages beyond Vietnamese and English; wider community-hub features (brief Scope).
 - Out: a second tenant, tenant sign-up or admin screens, per-tenant branding or domains, and tenant switching (Decision 2026-10-31).
 - Out: firmer overdue consequences such as probation or strikes, automatic expiry of uncollected reservations, fines, and scheduling pickups in the system (brief Scope, Solution; addendum Circulation rules).
-- Touch point: piviki.fi coming-soon page, replaced at launch by the patron website; linked Facebook and Instagram accounts stay outside the system; owner: epic-launch.
+- Touch point: piviki.fi coming-soon page, replaced at launch by the patron website; linked Facebook and Instagram accounts stay outside the system; owner: epic-soft-open.
 - Touch point: community group chat, WhatsApp and Zalo, used by people for the pickup address, pickup windows, join approval and contact; the system only shares the invitation at sign-up; owner: epic-patron-site.
 - Touch point: transactional email service on the library's own domain; owner: epic-librarian-catalogue for the adapter and domain, epic-reservation-loop for the outbox and delivery (spine AD-12).
 - Tracer path: a librarian imports a book, a parent signs up, joins the chat group and reserves it, the librarian marks it ready, the parent gets the email, the book is picked up, then reminded about and returned.
@@ -115,7 +115,7 @@ Vietnamese-speaking parents in Tampere can find and borrow Vietnamese children's
 - Decision: 2026-10-31: When a title's only copy is marked lost, its queue places are cancelled and those patrons are emailed.
 - Decision: 2026-10-31: The name is Piviki, for the library and the tenant.
 - Decision: 2026-11-01: Sliced into six epics, cut by capability delivered together, with the cuttable loan work in its own epic and the platform baseline in epic-librarian-catalogue.
-- Decision: 2026-11-01: Every epic deploys to production at a non-public address; the coming-soon page stays and sign-up stays closed to real patrons until epic-launch.
+- Decision: 2026-11-01: Every epic deploys to production at a non-public address; the coming-soon page stays and sign-up stays closed to real patrons until epic-launch. Superseded 2026-11-05: see the 2026-11-05 decisions below.
 - Decision: 2026-11-01: ISBN lookup (R12) moves from epic-librarian-catalogue to epic-loan-care because it is a nice-to-have; manual entry and the cover-scan import carry the catalogue milestone.
 - Decision: 2026-11-01: The catalogue comes first rather than reserve-to-pickup, because reservations need books and accounts and the catalogue is the first milestone.
 - Decision: 2026-11-03: The architecture spine is adopted as a companion of the initiative and every epic.
@@ -123,7 +123,14 @@ Vietnamese-speaking parents in Tampere can find and borrow Vietnamese children's
 - Decision: 2026-11-03: The code is MIT licensed, in the piviki-org GitHub organisation (spine AD-18).
 - Decision: 2026-11-03: An account with no activity for 1 year, the per-tenant inactivity window, is deleted without a warning email, never while it holds a book or an open reservation (spine AD-14).
 - Decision: 2026-11-03: R17 is split: epic-librarian-catalogue records donated copies with no donor, and epic-patron-site links and unlinks a consenting patron as donor.
-- Decision: 2026-11-03: Production runs on AWS EC2 on the founders' credits until right after the initial load, then moves to OVH VPS-1 by backup restore; the AWS instance then becomes the test environment (spine AD-17). No real patron's data is ever on AWS (AD-8, AD-18).
+- Decision: 2026-11-03: Production runs on AWS EC2 on the founders' credits until right after the initial load, then moves to OVH VPS-1 by backup restore; the AWS instance then becomes the test environment (spine AD-17). No real patron's data is ever on AWS (AD-8, AD-18). Superseded 2026-11-05: see below.
+- Decision: 2026-11-05: The AWS EC2 instance is the test environment from its first bootstrap (test-admin, test-api and ssh-test names, GitHub Environment test, tofu/test, Bitwarden test), on the AWS free plan, whose end date the founders record; production is one OVH VPS-1 that starts empty, and nothing moves from test (spine AD-17). Founders approved.
+- Decision: 2026-11-05: Production is not public until the soft open; epic-soft-open, a new epic after epic-patron-site and before epic-reservation-loop, starts production (a founder's story, started when the founders choose), runs the real import, and switches piviki.fi to the patron site. Every other story is built and checked on test.
+- Decision: 2026-11-05: The production host is OVH VPS-1; production on a second AWS account was considered and dropped, because it exceeds the 15 EUR monthly cap once credits end and a later host move is the restore-move the founders dropped.
+- Decision: 2026-11-05: epic-initial-load builds the import script and runs trial imports on test with the founder-checked scans; the real import is an epic-soft-open story.
+- Decision: 2026-11-05: At the soft open sign-up opens to anyone only if the privacy notice, usage policy and AD-18 agreements exist; otherwise the site is browse-only and sign-up is limited to a pilot allowlist of founder-owned emails. Pilot accounts are removed by normal account deletion before sign-up opens (spine AD-8).
+- Decision: 2026-11-05: epic-soft-open takes R21 and the sign-up side of R19 (privacy notice, usage policy, AD-18 agreements, Art. 9 answer, breach runbook, patron account deletion) from epic-launch, which keeps the first real loan, R23, retention and inactivity deletion, and the success signals.
+- Decision: 2026-11-05: patronAccountsAllowed is retired; the pilot allowlist gates patron creation on every path while sign-up is closed (spine AD-8).
 - Open question: What loan period, maximum books and renewal limits apply at the first real loan, and who confirms them? Stakeholders decide; due dates and reminders need a value by end of December 2026.
 - Open question: Does a Vietnamese community library's patron list count as data revealing ethnic origin under GDPR Art. 9? Founders to check tietosuoja.fi before launch; the answer may change the legal basis and the sign-up wording.
 - Open question: Does Tampere use Helsinki's Multilingual Library deposit collections for Vietnamese? Founders to check; does not block the build.

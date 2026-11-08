@@ -3,12 +3,12 @@
 [[entry]]
 id = 1
 type = "story"
-title = "A librarian signs in at admin.piviki.fi in production"
-description = "Tracer bullet: piviki-core (Payload, Postgres) and piviki-infra (Compose, cloudflared, Caddy) run on one x86_64 EC2 instance in an EU region on a paid-plan AWS account, with no IAM role, IMDSv2 required at hop limit 1, SSM Default Host Management off, EBS encryption by default and standard CPU credits, set up only by the piviki-infra bootstrap, which blocks all inbound except SSH on the host itself, with a Compose file that publishes no ports; every value that differs between environments, including exact CORS and CSRF origins, is runtime configuration on the host, and Caddy returns 404 for an unknown host; CI builds images tagged by commit and build date to GHCR with pinned Actions, and a manual workflow run naming the GitHub Environment and tag deploys through a limited deploy user reached over SSH through the host's Tunnel with an Access service token, running the first-register, path allowlist and one-connector checks on every deploy and recording the tag running in each environment; migrations run before the new core starts, and each service reads only its own root-owned secrets, none in EC2 user data, listed by name in the piviki-infra secrets inventory; Dependabot and secret scanning are on in every repository; the Cloudflare zone is imported into OpenTofu with a no-change plan and one encrypted state per environment in the private R2 bucket created in the EU jurisdiction; the librarians collection has AD-7's password length, about 8-hour sessions and secure, SameSite=Lax, host-only cookies with tokens removed from bodies; collections are built from a deny-by-default helper; GraphQL is disabled, jobs.access.run returns false and first-register is blocked at Caddy and in a hook; the first librarian is seeded over SSH, and only then are the admin and api records added, with Cloudflare Access on admin.piviki.fi, and api.piviki.fi serving only /api/v1 with a health route."
-verify = "A founder passes Cloudflare Access, signs in at admin.piviki.fi on an image deployed by a manual workflow run naming production and a commit tag; api.piviki.fi/api/v1/health answers while any other api path returns 404; the deploy checks show first-register returning 404 and one Tunnel connector; an outside scan of the EC2 instance shows only SSH; the core container cannot reach the instance metadata service; piviki.fi still shows the coming-soon page."
+title = "A librarian signs in at test-admin.piviki.fi on the test environment"
+description = "Tracer bullet on the test environment: piviki-core (Payload, Postgres) and piviki-infra (Compose, cloudflared, Caddy) run on one x86_64 EC2 instance in an EU region on the AWS free plan, whose end date the founders record, with no IAM role, IMDSv2 required at hop limit 1, SSM Default Host Management off, EBS encryption by default and standard CPU credits, set up only by the piviki-infra bootstrap, which sets the host's environment name (test) and blocks all inbound except SSH on the host itself, with a Compose file that publishes no ports; every value that differs between environments, including exact CORS and CSRF origins, is runtime configuration on the host, core refuses to start when the host names disagree with the environment name, and Caddy returns 404 for an unknown host; CI builds images tagged by commit and build date to GHCR with pinned Actions, and a manual workflow run naming the GitHub Environment and tag deploys through a limited deploy user reached over SSH at ssh-test.piviki.fi through the host's Tunnel with an Access service token, running the first-register, path allowlist and one-connector checks on every deploy and recording the tag running in each environment; migrations run before the new core starts, and each service reads only its own root-owned secrets, none in EC2 user data, listed by name in the piviki-infra secrets inventory, held in Bitwarden's test collection; Dependabot and secret scanning are on in every repository; OpenTofu first creates production's state holding only the shared resources (the piviki.fi zone imported with a no-change plan, its coming-soon records, the Access one-time PIN login method), then tofu/test holding only test-named resources, one encrypted state per environment, each in a state-only R2 bucket of its own created in the EU jurisdiction and reached only by a founder-held R2 token, with one OpenTofu Cloudflare API token per environment; the librarians collection has AD-7's password length, about 8-hour sessions and secure, SameSite=Lax, host-only cookies with tokens removed from bodies; collections are built from a deny-by-default helper; GraphQL is disabled, jobs.access.run returns false and first-register is blocked at Caddy and in a hook; the first librarian is seeded over SSH, and only then are the test-admin and test-api records added, with Cloudflare Access and noindex on test-admin.piviki.fi, and test-api.piviki.fi serving only /api/v1 with a health route."
+verify = "A founder passes Cloudflare Access, signs in at test-admin.piviki.fi on an image deployed by a manual workflow run naming test and a commit tag; test-api.piviki.fi/api/v1/health answers while any other api path returns 404; the deploy checks show first-register returning 404 and one Tunnel connector; an outside scan of the EC2 instance shows only SSH; the core container cannot reach the instance metadata service; a tofu/test destroy plan names no shared resource; piviki.fi still shows the coming-soon page."
 covers = []
 after = []
-hitl = true # create the EC2 instance on a paid-plan AWS account, create the scoped Cloudflare API token, the state bucket and the deploy service token, seed the first librarian, run the outside scan
+hitl = true # create the EC2 instance on the AWS free plan and record its end date, create the per-environment Cloudflare API tokens, the state buckets and their R2 tokens, and the test deploy service token, seed the first librarian, run the outside scan
 risk = "high"
 references = ["_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md#assumptions-to-prove"]
 
@@ -16,21 +16,34 @@ references = ["_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architec
 id = 2
 type = "story"
 title = "Tenant, policy values and patron records are in place"
-description = "Adds the tenant reference with its shared access filter to every library-owned record; the tenant-policy record seeded by migration with placeholder loan period, maximum books, renewal rules, retention period, inactivity window and uncollected window, plus time zone, signupOpen and currentPolicyVersion, read only through modules/circulation/policy; the policy:set command that validates and records who, when and what; chat group links as server configuration values; and the patrons collection with its full AD-14 fields, email unique per tenant, the phone number readable only by librarians, no public route, and admin and generated deletes denied; and the patronAccountsAllowed server configuration value, false on the AWS host until the move, under which modules/accounts refuses every patron create, including through admin and the generated API."
-verify = "A developer runs policy:set in the production core container to change the loan period and sees the new value and its audit entry with no deploy; CI shows the tests passing that a client-sent tenant is ignored, a patron session is refused on every collection, deleting a patron through admin is refused, and creating a patron is refused while patronAccountsAllowed is false."
+description = "Adds the tenant reference with its shared access filter to every library-owned record; the tenant-policy record seeded by migration with placeholder loan period, maximum books, renewal rules, retention period, inactivity window and uncollected window, plus time zone, signupOpen and currentPolicyVersion, read only through modules/circulation/policy; the policy:set command that validates and records who, when and what; chat group links and the pilot allowlist as server configuration values; and the patrons collection with its full AD-14 fields, email unique per tenant, the phone number readable only by librarians, no public route, admin and generated deletes denied, and, while signupOpen is false, every patron create refused by modules/accounts, including through admin and the generated API, for an email not on the pilot allowlist, with signup_closed before anything is stored."
+verify = "A developer runs policy:set in the test core container to change the loan period and sees the new value and its audit entry with no deploy; CI shows the tests passing that a client-sent tenant is ignored, a patron session is refused on every collection, deleting a patron through admin is refused, and creating a patron for an email off the pilot allowlist is refused with signup_closed on every path, admin and the generated API included, while signupOpen is false."
 covers = ["R3", "R5"]
 after = [1]
 hitl = false
 risk = "medium"
 
 [[entry]]
+id = 5
+type = "story"
+title = "Images upload safely to public storage"
+description = "Adds the media collection, with its own librarian admin page for uploads, stored through the S3 adapter in a per-environment public R2 bucket created by OpenTofu with unguessable names and no listing, with every original re-encoded so no metadata survives; story 3 links titles to it; proves the spine's assumption that storage-s3 uploads to R2 with the current AWS SDK."
+verify = "A librarian uploads a GPS-tagged photo on test's Media page; the stored file opens by its URL, carries no EXIF, and the bucket refuses listing."
+covers = ["R1"]
+after = [2]
+hitl = true # a founder applies the media bucket in tofu/test with the founder-held tokens
+risk = "medium"
+references = ["_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md#assumptions-to-prove"]
+notes = ["If the upload fails on checksums, set checksum options to WHEN_REQUIRED (spine Assumptions to Prove)."]
+
+[[entry]]
 id = 3
 type = "story"
-title = "A librarian adds and edits a book and its copies"
-description = "Adds titles in the AD-20 shape, drafts by default, stored in NFC with the AD-10 normalised search column, and copies whose state core sets to available, with core-assigned barcodes from one sequence under a per-environment prefix (PVK in production), and the core barcode lookup function, used by story 11's field, refusing another environment's prefix, in English librarian screens whose text comes from core message files."
-verify = "On production a librarian adds a title with no ISBN, edits it, adds two copies and sees consecutive PVK barcodes; a search without diacritics finds a title typed with them; CI shows the NFC and refused-client-barcode tests passing, and a TST-prefix test proving the prefix is not hard-coded."
+title = "A librarian adds and edits a book, its copies and its images"
+description = "Adds titles in the AD-20 shape, drafts by default, stored in NFC with the AD-10 normalised search column, and copies whose state core sets to available, with core-assigned barcodes from one sequence under a per-environment prefix (TST on test, PVK in production), core refusing to start when the prefix disagrees with the host's environment name, and the core barcode lookup function, used by story 11's field, refusing another environment's prefix, in English librarian screens whose text comes from core message files; the title form has front cover, back cover and publishing information page image fields linked to the media collection, which a librarian fills by uploading from the form or by choosing an existing image."
+verify = "On test a librarian adds a title with no ISBN, edits it, adds two copies and sees consecutive TST barcodes; uploads a front cover from the title form and sees it on the title; a search without diacritics finds a title typed with them; CI shows the NFC and refused-client-barcode tests passing, a PVK-prefix test proving the prefix is not hard-coded, and core refusing to start with a prefix that disagrees with the environment name."
 covers = ["R1", "R4", "R5"]
-after = [2]
+after = [5] # links titles to the media collection
 hitl = false
 risk = "medium"
 
@@ -46,46 +59,33 @@ hitl = false
 risk = "medium"
 
 [[entry]]
-id = 5
-type = "story"
-title = "Book images are stored safely in public storage"
-description = "Adds front cover, back cover and publishing information page images to titles, stored through the S3 adapter in a per-environment public R2 bucket created by OpenTofu with unguessable names and no listing, with every original re-encoded so no metadata survives; proves the spine's assumption that storage-s3 uploads to R2 with the current AWS SDK."
-verify = "A librarian attaches a GPS-tagged photo to a title on production; the stored file opens by its URL, carries no EXIF, and the bucket refuses listing."
-covers = ["R1"]
-after = [4] # shares the titles collection with the duplicate check
-hitl = false
-risk = "medium"
-references = ["_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md#assumptions-to-prove"]
-notes = ["If the upload fails on checksums, set checksum options to WHEN_REQUIRED (spine Assumptions to Prove)."]
-
-[[entry]]
 id = 6
 type = "story"
 title = "Review view publishes drafts, and the import script can sign in"
-description = "Adds the review view, its text from the core message files, that lists drafts, flags draft titles with no copy and images attached to no title, merges drafts moving their copies with barcodes unchanged, and publishes through the duplicate check; adds API keys on librarian accounts and the Cloudflare Access service token that epic-initial-load's import script uses."
-verify = "In the production review view a librarian sees a draft with no copy and an image with no title flagged, merges two draft titles and sees the copies move with their barcodes, and publishes the result; an API key with the service token creates a draft title through admin.piviki.fi from outside."
+description = "Adds the review view, its text from the core message files, that lists drafts, flags draft titles with no copy and images attached to no title, merges drafts moving their copies with barcodes unchanged, and publishes through the duplicate check; adds API keys on librarian accounts and the Cloudflare Access service-token setup that epic-initial-load's import script uses, with test's key and token; production's pair is created by epic-soft-open's real-import story."
+verify = "In the test review view a librarian sees a draft with no copy and an image with no title flagged, merges two draft titles and sees the copies move with their barcodes, and publishes the result; an API key with test's service token creates a draft title through test-admin.piviki.fi from outside."
 covers = ["R6"]
-after = [5]
-hitl = true # a founder issues the service token and stores it in the password manager
+after = [4]
+hitl = true # a founder issues test's service token and stores it in Bitwarden's test collection
 risk = "high"
 
 [[entry]]
 id = 7
 type = "story"
-title = "Nightly encrypted backups, with a restore tested"
-description = "Adds the backup container, switched on per environment so test never runs it, with its own read-only role and R2 token, sending a nightly age-encrypted pg_dump to the dump prefix of the private EU bucket, with a 30-day lifecycle and 7-day lock scoped to that prefix so OpenTofu state and erasures are untouched, a missed-dump heartbeat alert watching only the current host, dump names that include the host, and an on-demand dump command; writes the restore runbook, restoring a production dump only on the production host or a founder's machine, including re-deleting erasure ids and advancing the barcode sequence by a margin before core starts; a restore is tested before epic-initial-load's bulk import, and the test records from stories 3 to 6 are removed so the import starts from a clean catalogue."
-verify = "A founder takes an on-demand dump and restores last night's dump with the offline key into a fresh Postgres and sees the data intact; the production catalogue holds no test records; skipping a dump raises the heartbeat alert; the bucket config shows the lifecycle rule and lock scoped to the dump prefix, leaving OpenTofu state and erasures untouched; after the restore the barcode sequence has skipped its margin."
+title = "Nightly encrypted backups, ready for production"
+description = "Adds the backup container, run only where the environment name is production, core and the deploy checks refusing a host whose backup service disagrees with it, with its own read-only role and R2 token, sending a nightly age-encrypted pg_dump to the dump prefix of production's private data bucket in the EU jurisdiction, created in production's OpenTofu state, with a 30-day lifecycle and 7-day lock scoped to that prefix so erasures are untouched, a missed-dump heartbeat alert watching only the current host, dump names that include the host and the running core tag, and an on-demand dump command; writes the restore runbook, restoring a production dump only on the production host or a founder's machine, re-deleting erasure ids and advancing the barcode sequence by a margin before core starts, built into core here so the production start deploys it; epic-soft-open's production start runs the first nightly dump, the heartbeat check and the restore drill."
+verify = "On a founder's machine, the backup container takes an on-demand dump of a local stack into a test prefix and the runbook restores it with the offline key into a fresh Postgres with the data intact and the barcode sequence advanced by its margin; CI shows the erasure re-delete running before core starts and core refusing to start on test with the backup service on; the OpenTofu plan shows the lifecycle rule and lock scoped to the dump prefix, leaving erasures untouched."
 covers = []
-after = [6] # shares piviki-infra Compose and OpenTofu files; runs before the first data that cannot be recreated
-hitl = true # founders generate and hold the age key offline and run the restore drill
+after = [6] # shares piviki-infra Compose and OpenTofu files
+hitl = true # founders generate and hold the age key offline
 risk = "medium"
 
 [[entry]]
 id = 8
 type = "story"
-title = "Production is hardened before real data"
-description = "Runs core as non-root on a read-only filesystem with no Docker socket and a non-superuser Postgres role, turns on automatic OS security updates in the piviki-infra bootstrap so every host gets them, and a monthly image rebuild under a new tag, a patch counting only once deployed to every running environment, adds the Caddy Origin check, the Cloudflare rate-limit rule, core limiter and lockout on librarian login, the ids-only logging with about 30-day rotation and the about 90-day ids-only log of librarian logins and generated writes, and MFA on every provider console, before epic-initial-load brings real data."
-verify = "Repeated failed librarian logins on production are limited and then locked out; an admin request with a foreign Origin is refused; a log sample holds ids and no names, emails or tokens; the core container runs as non-root on a read-only filesystem; every provider console requires MFA; automatic OS security updates show as enabled on the host; the monthly rebuild is scheduled in CI; the Cloudflare rate-limit rule covers the sensitive paths; the 90-day ids-only log shows a librarian login."
+title = "Hosts are hardened before real data"
+description = "Runs core as non-root on a read-only filesystem with no Docker socket and a non-superuser Postgres role, turns on automatic OS security updates in the piviki-infra bootstrap so every host gets them, and a monthly image rebuild under a new tag, a patch counting only once deployed to every running environment, adds the Caddy Origin check, the Cloudflare rate-limit rule in production's OpenTofu state, core limiter and lockout on librarian login, the ids-only logging with about 30-day rotation and the about 90-day ids-only log of librarian logins and generated writes, and MFA on every provider console, before epic-soft-open brings real data."
+verify = "Repeated failed librarian logins on test are limited and then locked out; an admin request with a foreign Origin is refused; a log sample holds ids and no names, emails or tokens; the core container runs as non-root on a read-only filesystem; every provider console requires MFA; automatic OS security updates show as enabled on the host; the monthly rebuild is scheduled in CI; the Cloudflare rate-limit rule covers the sensitive paths; the 90-day ids-only log shows a librarian login."
 covers = []
 after = [7] # shares piviki-infra Compose and Caddy files
 hitl = true # founders turn on MFA on every provider console
@@ -95,19 +95,20 @@ risk = "medium"
 id = 9
 type = "story"
 title = "Mail sends from the library's domain"
-description = "A founder picks the transactional email provider against the spine's criteria and signs its processing agreement; core sends through the Nodemailer SMTP adapter on port 587 or 465, never 25, with a recipient allowlist switched off in production for the test environment to use, with SPF, DKIM and DMARC records in OpenTofu, tracking off, the reset limiter and a per-address send limit; finishes proving that reset links work across the two hostnames; epic-reservation-loop later adds the outbox on top of it."
-verify = "A librarian requests a password reset on production, receives it from an @piviki.fi address with SPF, DKIM and DMARC passing and no tracking links, and the link opens on admin.piviki.fi through Access and sets the password; repeated resets for one address are limited."
+description = "A founder picks the transactional email provider against the spine's criteria and signs its processing agreement, and sets up a separate test provider account; core sends through the Nodemailer SMTP adapter on port 587 or 465, never 25, with a recipient allowlist that is on exactly in test, core refusing to start when it disagrees with the environment name, test sending from testmail.piviki.fi and production from piviki.fi, with SPF, DKIM and DMARC records for both in OpenTofu, tracking off, the reset limiter and a per-address send limit; finishes proving that reset links work across the two hostnames; epic-soft-open's production start checks mail from piviki.fi; epic-reservation-loop later adds the outbox on top of it."
+verify = "A librarian requests a password reset on test, receives it from a testmail.piviki.fi address with SPF, DKIM and DMARC passing and no tracking links, and the link opens on test-admin.piviki.fi through Access and sets the password; a reset to an address off the test recipient allowlist is not sent; repeated resets for one address are limited."
 covers = []
 after = [8] # shares piviki-infra OpenTofu files and the limiter
-hitl = true # a founder chooses the provider, signs the agreement and verifies the domain
+hitl = true # a founder chooses the provider, signs the agreement, sets up the test account and verifies both domains
 risk = "low"
+notes = ["piviki.fi already has records outside OpenTofu (found 2026-11-06 at story 1's import): three MX records for Cloudflare Email Routing, an apex SPF TXT `v=spf1 include:_spf.mx.cloudflare.net include:_spf.google.com ~all`, and an apex TXT `1|www.piviki.fi` of unknown origin. Story 1 left them unmanaged. A domain has only one SPF record, so production's SPF in OpenTofu must replace or import that TXT, keeping the includes still in use, never add a second; decide whether the Email Routing MX records move into OpenTofu or stay with Email Routing."]
 
 [[entry]]
 id = 10
 type = "story"
 title = "Donated copies are recorded"
 description = "Adds the donations collection, with no versions, holding copy, optional donor field and date, shown as dd-mm-yyyy in Europe/Helsinki, lets a librarian record a copy as donated with no donor, and refuses deleting a copy or title that has a donation; donor linking is epic-patron-site's."
-verify = "A librarian records a copy as donated with a date on production, and deleting that copy is refused; CI shows a patron session refused on donations."
+verify = "A librarian records a copy as donated with a date on test, and deleting that copy is refused; CI shows a patron session refused on donations."
 covers = ["R2"]
 after = [6] # shares the copies hooks with merging
 hitl = false
@@ -118,7 +119,7 @@ id = 11
 type = "story"
 title = "A librarian finds a copy by barcode"
 description = "Adds one barcode field, taking typing or a USB scanner, on every librarian screen that acts on a copy, opening that copy."
-verify = "A librarian scans or types a PVK barcode on production and lands on that copy; an unknown barcode says so."
+verify = "A librarian scans or types a TST barcode on test and lands on that copy; an unknown barcode, or one with another environment's prefix, says so."
 covers = ["R7"]
 after = [10] # shares the copy screens
 hitl = false
@@ -128,8 +129,8 @@ risk = "low"
 id = 12
 type = "story"
 title = "Labels print on A4 sticker sheets"
-description = "Adds the label view that prints Code 128 labels with barcode, number and title, label text from the core message files and any date as dd-mm-yyyy in Europe/Helsinki, for copies of published titles on the chosen A4 sheet of 20 to 24 labels, starting at any position, and records which copies are labelled."
-verify = "A librarian prints labels for three published copies starting at position 5 of a partly used sheet, the printed barcodes scan back to those copies, and they show as labelled."
+description = "Adds the label view that prints Code 128 labels with barcode, number and title, a TEST mark following the TST prefix, label text from the core message files and any date as dd-mm-yyyy in Europe/Helsinki, for copies of published titles on the chosen A4 sheet of 20 to 24 labels, starting at any position, and records which copies are labelled."
+verify = "A librarian on test prints labels for three published copies starting at position 5 of a partly used sheet, the printed labels carry the TEST mark, the printed barcodes scan back to those copies, and they show as labelled."
 covers = ["R8"]
 after = [11] # shares the copy screens
 hitl = true # a founder names the sheet product and test-prints
@@ -140,19 +141,32 @@ id = 13
 type = "story"
 title = "Camera scanning fills the barcode field"
 description = "Adds a camera button to the barcode field that reads a Code 128 barcode with a browser barcode library on a phone or webcam and fills the field as a USB scanner would; cuttable if time runs short."
-verify = "A librarian on a phone opens a copy screen on production, scans a printed label with the camera and lands on that copy."
+verify = "A librarian on a phone opens a copy screen on test, scans a printed label with the camera and lands on that copy."
 covers = ["R7"]
 after = [12] # needs printed labels to scan
 hitl = false
 risk = "low"
 
 [[entry]]
+id = 15
+type = "story"
+title = "Host infrastructure runs apart from core's deploy"
+description = "Decides first, through bmad-architecture (Update), which host services belong to core's release and which to the host (core, its migrations and Caddy, which carries core's path allowlist and first-register block, as the app; cloudflared and Postgres as host infrastructure), where each part's Compose file, env files and env-file manifest live, which project owns the shared edge network and Postgres's network, how infrastructure services are updated and by whom apart from a core deploy, and what AD-21 keeps (one recorded version per host or a core tag and an infra commit, founders controlling root commands on the host, a deploy never fetching, pinned digests, a restore or rebuild naming the whole runtime) and AD-17 keeps (piviki-infra holding only what is shared, the one-connector check, core refusing to start when host names disagree); then builds that layout and its runbooks so a fresh host's first deploy needs no hand-started Tunnel, a core deploy never starts, stops or recreates cloudflared or Postgres, and an update to cloudflared does not cut the session running it; proven on test by rebuilding or migrating the test host with no data kept, before epic-soft-open's production start sets up the OVH host once, in this layout."
+verify = "On a test host set up from the runbooks in the new layout, the first core deploy succeeds with no hand-started cloudflared; a core deploy of a tag that changes deploy/ leaves the cloudflared and Postgres containers running with unchanged container ids; a cloudflared digest update and a Postgres digest update each complete by their documented path, the cloudflared one without dropping the session running it; the one-connector and host-name checks pass; the spine's AD-21, and AD-17 if it changes, is finalized through bmad-architecture; a test-host rebuild from the runbooks reaches a signed-in librarian at test-admin.piviki.fi."
+covers = []
+after = [9] # changes the deploy/ Compose, Caddy and deploy script that 7, 8 and 9 change; last of the infrastructure lane
+hitl = true # founders take the AD-21 decision through bmad-architecture and rebuild or migrate the test host
+risk = "high"
+references = ["_bmad-output/initiative-kirjasto-mvp/architecture-piviki/architecture-piviki.md#ad-21-cores-host-runtime-has-one-version-per-host", "_bmad-output/initiative-kirjasto-mvp/handoff-sofia-2026-11-06.md"]
+notes = ["Open findings from story 1's first deploy (2026-11-06), closed by this story whatever layout it picks: (1) cloudflared runs in core's Compose stack, which only a deploy starts, so a fresh host's first deploy fails with `websocket: bad handshake` until a founder starts cloudflared alone (runbook-first-deploy §5 carries that stopgap since piviki-infra 6bd5957); (2) `deploy.sh` runs `docker compose up -d --wait --remove-orphans` over every service, so a deploy that changes cloudflared's definition, such as a Dependabot digest bump, recreates it mid-deploy and cuts the deploy's own SSH session, and a Postgres digest bump restarts the database inside an app deploy."]
+
+[[entry]]
 id = 14
 type = "story"
 title = "Refactor sweep"
 description = "Cleanup only, scoped at its start from the plans and review findings the epic deferred."
-verify = "The deferred findings listed at its start are closed or recorded, and every check of the epic still passes in production."
+verify = "The deferred findings listed at its start are closed or recorded, and every check of the epic still passes on test, and on production once it has started."
 covers = []
-after = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+after = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15]
 hitl = false
 risk = "low"
